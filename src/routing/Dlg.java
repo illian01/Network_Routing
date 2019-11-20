@@ -181,7 +181,7 @@ public class Dlg extends JFrame implements BaseLayer {
 		proxtARPTableScrollPane.setBounds(10, 15, 430, 150);
 		ProxyARPPanel.add(proxtARPTableScrollPane);
 		
-		proxyARPTableAddButton = new JButton("Delete");
+		proxyARPTableAddButton = new JButton("Add");
 		proxyARPTableAddButton.setBounds(270, 170, 80, 30);
 		proxyARPTableAddButton.addActionListener(new setAddressListener());
 		ProxyARPPanel.add(proxyARPTableAddButton);
@@ -200,7 +200,7 @@ public class Dlg extends JFrame implements BaseLayer {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			if(e.getSource() == staticRoutingTableAddButton) {
-				new StaticAddDlg();
+				new StaticRouteAddDlg();
 			}
 			// Not Implemented
 		}
@@ -258,7 +258,7 @@ public class Dlg extends JFrame implements BaseLayer {
 	}
 
 	
-	private class StaticAddDlg extends JFrame {
+	private class StaticRouteAddDlg extends JFrame {
 		
 		Container contentPane;
 		
@@ -276,7 +276,7 @@ public class Dlg extends JFrame implements BaseLayer {
 		JButton cancelButton;
 		
 		
-		public StaticAddDlg() {
+		public StaticRouteAddDlg() {
 			setTitle("Form2");
 			setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			setBounds(250, 250, 400, 300);
