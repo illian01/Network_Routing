@@ -85,6 +85,11 @@ public class EthernetLayer implements BaseLayer {
 		return true;
 	}
 	
+	public synchronized boolean Receive(byte[] input, String interface_) {
+		// Not Implemented
+		return true;
+	}
+	
 	public boolean CheckAddress(byte[] packet) {
 		
 		// srcaddr == my mac addr -> false
