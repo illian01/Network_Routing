@@ -35,6 +35,7 @@ import javax.swing.table.DefaultTableModel;
 import org.jnetpcap.PcapAddr;
 import org.jnetpcap.PcapIf;
 
+
 public class Dlg extends JFrame implements BaseLayer {
 	public int nUpperLayerCount = 0;
 	public String pLayerName = null;
@@ -344,6 +345,11 @@ public class Dlg extends JFrame implements BaseLayer {
 			interfacelbl.setFont(interfacelbl.getFont().deriveFont(18.0f));
 			
 			interfaceComboBox = new JComboBox<>();
+			
+			List<PcapIf> l = ((NILayer) m_LayerMgr.GetLayer("NI")).m_pAdapterList;
+			for (int i = 0; i < l.size(); i++)
+				interfaceComboBox.addItem(l.get(i).getDescription() + " : " + l.get(i).getName());
+			
 			interfaceComboBox.setBounds(130, 165, 230, 30);
 			interfaceComboBox.addActionListener(new setAddressListener());
 			contentPane.add(interfaceComboBox);// src address
@@ -372,7 +378,24 @@ public class Dlg extends JFrame implements BaseLayer {
 				if(e.getSource() == cancelButton) {
 					dispose();
 				}
-				// Not Implemented
+				else if(e.getSource() == addButton) {
+					String destination = destinationInputField.getText();
+					String netmask = netmaskInputField.getText();
+					String gateway = gatewayInputField.getText();
+					String flag = "";
+					flag += upCheckBox.isSelected() ? "U" : "";
+					flag += gatewayCheckBox.isSelected() ? "G" : "";
+					flag += hostCheckBox.isSelected() ? "H" : "";
+					String interface_ = interfaceComboBox.getSelectedItem().toString();
+					
+					staticRoutingTableRows = new Vector<String>();
+					staticRoutingTableRows.addElement(destination);
+					staticRoutingTableRows.addElement(netmask);
+					staticRoutingTableRows.addElement(gateway);
+					staticRoutingTableRows.addElement(flag);
+					staticRoutingTableRows.addElement(interface_);
+					staticRoutingTableModel.addRow(staticRoutingTableRows);
+				}
 			}
 		}
 	}
