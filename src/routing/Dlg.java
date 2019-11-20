@@ -225,6 +225,9 @@ public class Dlg extends JFrame implements BaseLayer {
 					staticRoutingTableModel.removeRow(selected[i]);
 				}
 			}
+			else if(e.getSource() == proxyARPTableAddButton) {
+				new ProxyARPAddDlg();
+			}
 			// Not Implemented
 		}
 	}
@@ -298,6 +301,14 @@ public class Dlg extends JFrame implements BaseLayer {
 		ARPCacheTableRows.addElement(value[2]);
 		ARPCacheTableRows.addElement(value[3]);
 		ARPCacheTableModel.addRow(ARPCacheTableRows);
+	}
+	
+	public synchronized void updateProxyARPTableRow(String[] value) {
+		proxyCacheTableRows = new Vector<String>();
+		proxyCacheTableRows.addElement(value[0]);
+		proxyCacheTableRows.addElement(value[1]);
+		proxyCacheTableRows.addElement(value[2]);
+		proxyCacheTableModel.addRow(proxyCacheTableRows);
 	}
 
 	
@@ -442,6 +453,110 @@ public class Dlg extends JFrame implements BaseLayer {
 					}
 					
 					updateStaticRoutingTableRow(value);
+					dispose();
+				}
+			}
+		}
+	}
+	
+	private class ProxyARPAddDlg extends JFrame {
+		
+		Container contentPane;
+		
+		JTextField ipAddressInputField;
+		JTextField macAddressInputField;
+		
+		JComboBox<String> interfaceComboBox;
+		
+		JButton addButton;
+		JButton cancelButton;
+		
+		
+		public ProxyARPAddDlg() {
+			setTitle("Form2");
+			setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			setBounds(250, 250, 400, 300);
+			contentPane = new JPanel();
+			((JComponent) contentPane).setBorder(new EmptyBorder(5, 5, 5, 5));
+			setContentPane(contentPane);
+			contentPane.setLayout(null);
+			
+			// Destination
+			JLabel destinationlbl = new JLabel("IP");
+			destinationlbl.setBounds(20, 25, 100, 30);
+			contentPane.add(destinationlbl);
+			destinationlbl.setFont(destinationlbl.getFont().deriveFont(18.0f));
+			
+			ipAddressInputField = new JTextField();
+			ipAddressInputField.setBounds(130, 25, 230, 30);
+			contentPane.add(ipAddressInputField);
+			
+			
+			// Network
+			JLabel netmasklbl = new JLabel("MAC");
+			netmasklbl.setBounds(20, 60, 100, 30);
+			contentPane.add(netmasklbl);
+			netmasklbl.setFont(netmasklbl.getFont().deriveFont(18.0f));
+			
+			macAddressInputField = new JTextField();
+			macAddressInputField.setBounds(130, 60, 230, 30);
+			contentPane.add(macAddressInputField);
+			
+			
+			// Interface
+			JLabel interfacelbl = new JLabel("Interface");
+			interfacelbl.setBounds(20, 95, 100, 30);
+			contentPane.add(interfacelbl);
+			interfacelbl.setFont(interfacelbl.getFont().deriveFont(18.0f));
+			
+			interfaceComboBox = new JComboBox<>();
+			
+			List<PcapIf> l = ((NILayer) m_LayerMgr.GetLayer("NI")).m_pAdapterList;
+			for (int i = 0; i < l.size(); i++)
+				interfaceComboBox.addItem(l.get(i).getDescription() + " : " + l.get(i).getName());
+			
+			interfaceComboBox.setBounds(130, 95, 230, 30);
+			interfaceComboBox.addActionListener(new setAddressListener());
+			contentPane.add(interfaceComboBox);// src address
+			
+			
+			// Buttons
+			addButton = new JButton("Add");
+			addButton.setBounds(120, 210, 80, 30);
+			addButton.addActionListener(new setAddressListener());
+			contentPane.add(addButton);
+			
+			cancelButton = new JButton("Cancel");
+			cancelButton.setBounds(210, 210, 80, 30);
+			cancelButton.addActionListener(new setAddressListener());
+			contentPane.add(cancelButton);
+			
+			
+			setDefaultCloseOperation(0);
+			setVisible(true);
+			setResizable(false);
+		}
+		
+		class setAddressListener implements ActionListener {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(e.getSource() == cancelButton) {
+					dispose();
+				}
+				else if(e.getSource() == addButton) {
+					String[] value = new String[3];
+					value[0] = ipAddressInputField.getText();
+					value[1] = macAddressInputField.getText();
+					value[2] = interfaceComboBox.getSelectedItem().toString();
+					
+					try {
+						ARPLayer arp = ((ARPLayer) m_LayerMgr.GetLayer("ARP"));
+						arp.addProxyEntry(value);
+					} catch (NoSuchAlgorithmException e1) {
+						e1.printStackTrace();
+					}
+					
+					updateProxyARPTableRow(value);
 					dispose();
 				}
 			}

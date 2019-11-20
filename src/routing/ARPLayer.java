@@ -1,10 +1,14 @@
 package routing;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 import javax.swing.DefaultListModel;
+
+import routing.IPLayer.Entry;
 
 public class ARPLayer implements BaseLayer {
     public int nUpperLayerCount = 0;
@@ -277,6 +281,27 @@ public class ARPLayer implements BaseLayer {
         for (int i = 0; i < 4; i++)
             m_sHeader.src_ip_addr.addr[i] = (byte) Integer.parseInt(st.nextToken());
     }
+    
+    public void addProxyEntry(String[] value) throws NoSuchAlgorithmException {
+    	String id = "";
+    	for(int i = 0; i < value.length; i++) id += value[i];
+    	id = idGen(id);
+    	this.ProxyARPCacheTable.put(id, new Entry(value[0], value[1], value[2], ""));
+    }
+    
+    public String idGen(String str) throws NoSuchAlgorithmException {
+		MessageDigest md = MessageDigest.getInstance("MD5");
+		md.update(str.getBytes());
+		byte byteData[] = md.digest();
+		StringBuffer sb = new StringBuffer();
+		
+		for(int i = 0 ; i < byteData.length ; i++)
+			sb.append(Integer.toString((byteData[i]&0xff) + 0x100, 16).substring(1));
+		String MD5 = sb.toString();
+
+
+		return MD5;
+	}
     
     class Entry {
     	String ip;
