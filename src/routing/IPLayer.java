@@ -1,8 +1,14 @@
 package routing;
 
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.StringTokenizer;
+
+import routing.ARPLayer.Entry;
 
 
 public class IPLayer implements BaseLayer {
@@ -13,6 +19,7 @@ public class IPLayer implements BaseLayer {
 	
 	String string_ip_src = "";
 
+	private Map<String, Entry> staticRoutingTable = new HashMap<>();
 
 	private class _IP {		// HEADER + data 
 		_IP_ADDR ip_src;
@@ -214,4 +221,43 @@ public class IPLayer implements BaseLayer {
 	public String GetSrcIPAddr() {
 		return this.string_ip_src;
 	}
+	
+	public void addEntry(String destination, String netmask, String gateway, String flag, String interface_, String metric) throws NoSuchAlgorithmException {
+		String id = destination + netmask + gateway + flag + interface_ + metric;
+		id = idGen(id);
+		this.staticRoutingTable.put(id, new Entry(destination, netmask, gateway, flag, interface_, metric));
+		System.out.println();
+	}
+	
+	public String idGen(String str) throws NoSuchAlgorithmException {
+		MessageDigest md = MessageDigest.getInstance("MD5");
+		md.update(str.getBytes());
+		byte byteData[] = md.digest();
+		StringBuffer sb = new StringBuffer();
+		
+		for(int i = 0 ; i < byteData.length ; i++)
+			sb.append(Integer.toString((byteData[i]&0xff) + 0x100, 16).substring(1));
+		String MD5 = sb.toString();
+
+
+		return MD5;
+	}
+	
+	class Entry {
+    	String destination;
+    	String netmask;
+    	String gateway;
+    	String flag;
+    	String interface_;
+    	String metric;
+    	
+    	public Entry(String destination, String netmask, String gateway, String flag, String interface_, String metric) {
+    		this.destination = destination;
+    		this.netmask = netmask;
+    		this.gateway = gateway;
+    		this.flag = flag;
+    		this.interface_ = interface_;
+    		this.metric = metric;
+    	}
+    }
 }

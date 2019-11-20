@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.SocketException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -387,6 +388,7 @@ public class Dlg extends JFrame implements BaseLayer {
 					flag += gatewayCheckBox.isSelected() ? "G" : "";
 					flag += hostCheckBox.isSelected() ? "H" : "";
 					String interface_ = interfaceComboBox.getSelectedItem().toString();
+					String metric = "-";
 					
 					staticRoutingTableRows = new Vector<String>();
 					staticRoutingTableRows.addElement(destination);
@@ -394,7 +396,15 @@ public class Dlg extends JFrame implements BaseLayer {
 					staticRoutingTableRows.addElement(gateway);
 					staticRoutingTableRows.addElement(flag);
 					staticRoutingTableRows.addElement(interface_);
+					staticRoutingTableRows.addElement(metric);
 					staticRoutingTableModel.addRow(staticRoutingTableRows);
+					
+					try {
+						IPLayer ip = ((IPLayer) m_LayerMgr.GetLayer("IP"));
+						ip.addEntry(destination, netmask, gateway, flag, interface_, metric);
+					} catch (NoSuchAlgorithmException e1) {
+						e1.printStackTrace();
+					}
 				}
 			}
 		}
