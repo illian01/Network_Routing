@@ -91,7 +91,7 @@ public class EthernetLayer implements BaseLayer {
 		
 		if(input[12] == 0x08 && input[13] == 0x06){				// ARP request & ARP reply
 			bytes = RemoveEtherHeader(input, input.length);
-			this.GetUpperLayer(0).Receive(bytes);
+			((ARPLayer)this.GetUpperLayer(0)).Receive(bytes, interface_);
 			return true;
 		}
 		else if(input[12] == 0x08 && input[13] == 0x00) {		// IPv4

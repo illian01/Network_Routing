@@ -134,6 +134,73 @@ public class ARPLayer implements BaseLayer {
     	// Not Implemented
         return true;
     }
+    
+    public synchronized boolean Receive(byte[] input, String interface_) {
+		byte[] bytes;
+		System.out.println("ARP Received! : " + interface_);
+		updateCache(input, interface_);
+		
+		return false;
+	}
+    
+    private synchronized void updateCache(byte[] input, String interface_) {
+    	String ip = getSrcIPAddrFromARP(input);
+		String mac = getSrcMACAddrFromARP(input);
+		Dlg GUI = (Dlg) GetUnderLayer().GetUpperLayer(1).GetUpperLayer(0);
+		
+		if(this.cacheTable.containsKey(ip)) {
+			this.cacheTable.remove(ip);
+			for(int i = 0; i < GUI.ARPCacheTableModel.getRowCount(); i++) {
+				if(GUI.ARPCacheTableModel.getValueAt(i, 0).toString().equals(ip)) {
+					GUI.ARPCacheTableModel.removeRow(i);
+					break;
+				}
+			}
+		}
+		
+		Entry entry = new Entry(ip, mac, interface_, "-");
+		this.cacheTable.put(ip, entry);
+		
+		String[] value = new String[4]; 
+		value[0] = entry.ip;
+		value[1] = entry.mac;
+		value[2] = entry.interface_;
+		value[3] = entry.flag;
+		
+		GUI.updateARPCacheTableRow(value);
+    }
+    
+    private String getSrcIPAddrFromARP(byte[] input) {
+    	byte[] addr = new byte[4];
+        String addr_str = new String();
+
+        for (int i = 0; i < 4; ++i)
+            addr[i] = input[i + 14];
+
+        addr_str += Byte.toUnsignedInt(addr[0]);
+        for (int j = 1; j < 4; ++j) {
+        	addr_str += ".";
+        	addr_str += Byte.toUnsignedInt(addr[j]);
+        }
+
+        return addr_str;
+    }
+    
+    private String getSrcMACAddrFromARP(byte[] input) {
+		byte[] addr = new byte[6];
+        String addr_str = new String();
+
+        for (int i = 0; i < 6; ++i)
+            addr[i] = input[i + 8];
+
+        addr_str += String.format("%02X", Byte.toUnsignedInt(addr[0]));
+        for (int j = 1; j < 6; ++j) {
+        	addr_str += "-";
+        	addr_str += String.format("%02X", Byte.toUnsignedInt(addr[j]));
+        }
+
+        return addr_str;
+	}
 
     @Override
     public String GetLayerName() {
@@ -214,16 +281,14 @@ public class ARPLayer implements BaseLayer {
     class Entry {
     	String ip;
     	String mac;
-    	String status;
-    	int count;
-    	long createdTime;
+    	String interface_;
+    	String flag;
     	
-    	public Entry(String ip, String mac, String status) {
+    	public Entry(String ip, String mac, String interface_, String flag) {
     		this.ip = ip;
     		this.mac = mac;
-    		this.status = status;
-    		this.count = 0;
-    		this.createdTime = System.currentTimeMillis();
+    		this.interface_ = interface_;
+    		this.flag = flag;
     	}
     }
 }

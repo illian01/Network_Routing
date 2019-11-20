@@ -280,7 +280,7 @@ public class Dlg extends JFrame implements BaseLayer {
 
 	}
 	
-	public void updateStaticRoutingTableRow(String[] value) {
+	public synchronized void updateStaticRoutingTableRow(String[] value) {
 		staticRoutingTableRows = new Vector<String>();
 		staticRoutingTableRows.addElement(value[0]);
 		staticRoutingTableRows.addElement(value[1]);
@@ -289,6 +289,15 @@ public class Dlg extends JFrame implements BaseLayer {
 		staticRoutingTableRows.addElement(value[4]);
 		staticRoutingTableRows.addElement(value[5]);
 		staticRoutingTableModel.addRow(staticRoutingTableRows);
+	}
+	
+	public synchronized void updateARPCacheTableRow(String[] value) {
+		ARPCacheTableRows = new Vector<String>();
+		ARPCacheTableRows.addElement(value[0]);
+		ARPCacheTableRows.addElement(value[1]);
+		ARPCacheTableRows.addElement(value[2]);
+		ARPCacheTableRows.addElement(value[3]);
+		ARPCacheTableModel.addRow(ARPCacheTableRows);
 	}
 
 	
