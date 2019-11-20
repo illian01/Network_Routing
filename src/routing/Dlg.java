@@ -174,7 +174,7 @@ public class Dlg extends JFrame implements BaseLayer {
 		contentPane.add(ProxyARPPanel);
 		ProxyARPPanel.setLayout(null);
 		
-		JTable proxyARPTable = new JTable(ARPCacheTableModel);
+		JTable proxyARPTable = new JTable(proxyCacheTableModel);
 		proxyARPTable.setBounds(0, 0, 580, 355);
 		proxyARPTable.setShowGrid(false);
 
