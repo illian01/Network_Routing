@@ -222,12 +222,17 @@ public class IPLayer implements BaseLayer {
 		return this.string_ip_src;
 	}
 	
+	public void removeEntry(String value) throws NoSuchAlgorithmException {
+		String id = "";
+		id = idGen(value);
+		this.staticRoutingTable.remove(id);
+	}
+	
 	public void addEntry(String[] value) throws NoSuchAlgorithmException {
 		String id = "";
 		for(int i = 0; i < value.length; i++) id += value[i];
 		id = idGen(id);
 		this.staticRoutingTable.put(id, new Entry(value));
-		System.out.println();
 	}
 	
 	public String idGen(String str) throws NoSuchAlgorithmException {

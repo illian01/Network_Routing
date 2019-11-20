@@ -58,6 +58,10 @@ public class Dlg extends JFrame implements BaseLayer {
 	Vector<String> proxyCacheTableColumns = new Vector<String>();
 	Vector<String> proxyCacheTableRows = new Vector<String>();
 	
+	JTable staticRoutingTable;
+	JTable ARPCacheTable;
+	JTable proxyARPTable;
+	
 	Container contentPane;
 
 	JButton staticRoutingTableAddButton;
@@ -123,7 +127,7 @@ public class Dlg extends JFrame implements BaseLayer {
 		contentPane.add(staticRoutingPanel);
 		staticRoutingPanel.setLayout(null);
 
-		JTable staticRoutingTable = new JTable(staticRoutingTableModel);
+		staticRoutingTable = new JTable(staticRoutingTableModel);
 		staticRoutingTable.setBounds(0, 0, 580, 355);
 		staticRoutingTable.setShowGrid(false);
 
@@ -152,7 +156,7 @@ public class Dlg extends JFrame implements BaseLayer {
 		ARPCachePanel.setLayout(null);
 
 
-		JTable ARPCacheTable = new JTable(ARPCacheTableModel);
+		ARPCacheTable = new JTable(ARPCacheTableModel);
 		ARPCacheTable.setBounds(0, 0, 580, 355);
 		ARPCacheTable.setShowGrid(false);
 
@@ -175,7 +179,7 @@ public class Dlg extends JFrame implements BaseLayer {
 		contentPane.add(ProxyARPPanel);
 		ProxyARPPanel.setLayout(null);
 		
-		JTable proxyARPTable = new JTable(proxyCacheTableModel);
+		proxyARPTable = new JTable(proxyCacheTableModel);
 		proxyARPTable.setBounds(0, 0, 580, 355);
 		proxyARPTable.setShowGrid(false);
 
@@ -203,6 +207,22 @@ public class Dlg extends JFrame implements BaseLayer {
 		public void actionPerformed(ActionEvent e) {
 			if(e.getSource() == staticRoutingTableAddButton) {
 				new StaticRouteAddDlg();
+			}
+			else if(e.getSource() == staticRoutingTableDeleteButton) {
+				int[] selected = staticRoutingTable.getSelectedRows();
+				for(int i = selected.length - 1; i >= 0; i--) {
+					String str = "";
+					for(int j = 0; j < 6; j++)
+						str += staticRoutingTableModel.getValueAt(selected[i], j).toString();
+					
+					try {
+						IPLayer ip = ((IPLayer) m_LayerMgr.GetLayer("IP"));
+						ip.removeEntry(str);
+					} catch (NoSuchAlgorithmException e1) {
+						e1.printStackTrace();
+					}
+					staticRoutingTableModel.removeRow(selected[i]);
+				}
 			}
 			// Not Implemented
 		}
@@ -396,6 +416,7 @@ public class Dlg extends JFrame implements BaseLayer {
 					value[1] = netmaskInputField.getText();
 					value[2] = gatewayInputField.getText();
 					
+					value[3] = "";
 					value[3] += upCheckBox.isSelected() ? "U" : "";
 					value[3] += gatewayCheckBox.isSelected() ? "G" : "";
 					value[3] += hostCheckBox.isSelected() ? "H" : "";
