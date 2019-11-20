@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.SocketException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -35,6 +36,7 @@ import javax.swing.table.DefaultTableModel;
 import org.jnetpcap.PcapAddr;
 import org.jnetpcap.PcapIf;
 
+
 public class Dlg extends JFrame implements BaseLayer {
 	public int nUpperLayerCount = 0;
 	public String pLayerName = null;
@@ -56,6 +58,10 @@ public class Dlg extends JFrame implements BaseLayer {
 	Vector<String> proxyCacheTableColumns = new Vector<String>();
 	Vector<String> proxyCacheTableRows = new Vector<String>();
 	
+	JTable staticRoutingTable;
+	JTable ARPCacheTable;
+	JTable proxyARPTable;
+	
 	Container contentPane;
 
 	JButton staticRoutingTableAddButton;
@@ -74,6 +80,7 @@ public class Dlg extends JFrame implements BaseLayer {
 		m_LayerMgr.AddLayer(new Dlg("GUI"));
 		m_LayerMgr.ConnectLayers(" NI ( *Eth ( *ARP +IP ( *GUI ) ) )");
 		m_LayerMgr.GetLayer("IP").SetUnderLayer(m_LayerMgr.GetLayer("ARP"));
+		((NILayer)m_LayerMgr.GetLayer("NI")).activateAllAdapter();
 	}
 
 	public Dlg(String pName) throws SocketException {
@@ -121,7 +128,7 @@ public class Dlg extends JFrame implements BaseLayer {
 		contentPane.add(staticRoutingPanel);
 		staticRoutingPanel.setLayout(null);
 
-		JTable staticRoutingTable = new JTable(staticRoutingTableModel);
+		staticRoutingTable = new JTable(staticRoutingTableModel);
 		staticRoutingTable.setBounds(0, 0, 580, 355);
 		staticRoutingTable.setShowGrid(false);
 
@@ -150,7 +157,7 @@ public class Dlg extends JFrame implements BaseLayer {
 		ARPCachePanel.setLayout(null);
 
 
-		JTable ARPCacheTable = new JTable(ARPCacheTableModel);
+		ARPCacheTable = new JTable(ARPCacheTableModel);
 		ARPCacheTable.setBounds(0, 0, 580, 355);
 		ARPCacheTable.setShowGrid(false);
 
@@ -173,7 +180,7 @@ public class Dlg extends JFrame implements BaseLayer {
 		contentPane.add(ProxyARPPanel);
 		ProxyARPPanel.setLayout(null);
 		
-		JTable proxyARPTable = new JTable(ARPCacheTableModel);
+		proxyARPTable = new JTable(proxyCacheTableModel);
 		proxyARPTable.setBounds(0, 0, 580, 355);
 		proxyARPTable.setShowGrid(false);
 
@@ -181,7 +188,7 @@ public class Dlg extends JFrame implements BaseLayer {
 		proxtARPTableScrollPane.setBounds(10, 15, 430, 150);
 		ProxyARPPanel.add(proxtARPTableScrollPane);
 		
-		proxyARPTableAddButton = new JButton("Delete");
+		proxyARPTableAddButton = new JButton("Add");
 		proxyARPTableAddButton.setBounds(270, 170, 80, 30);
 		proxyARPTableAddButton.addActionListener(new setAddressListener());
 		ProxyARPPanel.add(proxyARPTableAddButton);
@@ -200,9 +207,57 @@ public class Dlg extends JFrame implements BaseLayer {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			if(e.getSource() == staticRoutingTableAddButton) {
-				new StaticAddDlg();
+				new StaticRouteAddDlg();
 			}
-			// Not Implemented
+			else if(e.getSource() == staticRoutingTableDeleteButton) {
+				int[] selected = staticRoutingTable.getSelectedRows();
+				for(int i = selected.length - 1; i >= 0; i--) {
+					String str = "";
+					for(int j = 0; j < 6; j++)
+						str += staticRoutingTableModel.getValueAt(selected[i], j).toString();
+					
+					try {
+						IPLayer ip = ((IPLayer) m_LayerMgr.GetLayer("IP"));
+						ip.removeEntry(str);
+					} catch (NoSuchAlgorithmException e1) {
+						e1.printStackTrace();
+					}
+					staticRoutingTableModel.removeRow(selected[i]);
+				}
+			}
+			else if(e.getSource() == ARPCacheTableDeleteButton) {
+				int[] selected = ARPCacheTable.getSelectedRows();
+				for(int i = selected.length - 1; i >= 0; i--) {
+					String str = ARPCacheTableModel.getValueAt(selected[i], 0).toString();
+					
+					try {
+						ARPLayer arp = ((ARPLayer) m_LayerMgr.GetLayer("ARP"));
+						arp.removeARPCacheEntry(str);
+					} catch (NoSuchAlgorithmException e1) {
+						e1.printStackTrace();
+					}
+					ARPCacheTableModel.removeRow(selected[i]);
+				}
+			}
+			else if(e.getSource() == proxyARPTableAddButton) {
+				new ProxyARPAddDlg();
+			}
+			else if(e.getSource() == proxyARPTableDeleteButton) {
+				int[] selected = proxyARPTable.getSelectedRows();
+				for(int i = selected.length - 1; i >= 0; i--) {
+					String str = "";
+					for(int j = 0; j < 3; j++)
+						str += proxyCacheTableModel.getValueAt(selected[i], j).toString();
+					
+					try {
+						ARPLayer arp = ((ARPLayer) m_LayerMgr.GetLayer("ARP"));
+						arp.removeProxyEntry(str);
+					} catch (NoSuchAlgorithmException e1) {
+						e1.printStackTrace();
+					}
+					proxyCacheTableModel.removeRow(selected[i]);
+				}
+			}
 		}
 	}
 
@@ -256,9 +311,37 @@ public class Dlg extends JFrame implements BaseLayer {
 		pUULayer.SetUnderLayer(this);
 
 	}
+	
+	public synchronized void updateStaticRoutingTableRow(String[] value) {
+		staticRoutingTableRows = new Vector<String>();
+		staticRoutingTableRows.addElement(value[0]);
+		staticRoutingTableRows.addElement(value[1]);
+		staticRoutingTableRows.addElement(value[2]);
+		staticRoutingTableRows.addElement(value[3]);
+		staticRoutingTableRows.addElement(value[4]);
+		staticRoutingTableRows.addElement(value[5]);
+		staticRoutingTableModel.addRow(staticRoutingTableRows);
+	}
+	
+	public synchronized void updateARPCacheTableRow(String[] value) {
+		ARPCacheTableRows = new Vector<String>();
+		ARPCacheTableRows.addElement(value[0]);
+		ARPCacheTableRows.addElement(value[1]);
+		ARPCacheTableRows.addElement(value[2]);
+		ARPCacheTableRows.addElement(value[3]);
+		ARPCacheTableModel.addRow(ARPCacheTableRows);
+	}
+	
+	public synchronized void updateProxyARPTableRow(String[] value) {
+		proxyCacheTableRows = new Vector<String>();
+		proxyCacheTableRows.addElement(value[0]);
+		proxyCacheTableRows.addElement(value[1]);
+		proxyCacheTableRows.addElement(value[2]);
+		proxyCacheTableModel.addRow(proxyCacheTableRows);
+	}
 
 	
-	private class StaticAddDlg extends JFrame {
+	private class StaticRouteAddDlg extends JFrame {
 		
 		Container contentPane;
 		
@@ -276,7 +359,7 @@ public class Dlg extends JFrame implements BaseLayer {
 		JButton cancelButton;
 		
 		
-		public StaticAddDlg() {
+		public StaticRouteAddDlg() {
 			setTitle("Form2");
 			setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			setBounds(250, 250, 400, 300);
@@ -344,6 +427,11 @@ public class Dlg extends JFrame implements BaseLayer {
 			interfacelbl.setFont(interfacelbl.getFont().deriveFont(18.0f));
 			
 			interfaceComboBox = new JComboBox<>();
+			
+			List<PcapIf> l = ((NILayer) m_LayerMgr.GetLayer("NI")).m_pAdapterList;
+			for (int i = 0; i < l.size(); i++)
+				interfaceComboBox.addItem(l.get(i).getDescription() + " : " + l.get(i).getName());
+			
 			interfaceComboBox.setBounds(130, 165, 230, 30);
 			interfaceComboBox.addActionListener(new setAddressListener());
 			contentPane.add(interfaceComboBox);// src address
@@ -372,7 +460,134 @@ public class Dlg extends JFrame implements BaseLayer {
 				if(e.getSource() == cancelButton) {
 					dispose();
 				}
-				// Not Implemented
+				else if(e.getSource() == addButton) {
+					String[] value = new String[6];
+					value[0] = destinationInputField.getText();
+					value[1] = netmaskInputField.getText();
+					value[2] = gatewayInputField.getText();
+					
+					value[3] = "";
+					value[3] += upCheckBox.isSelected() ? "U" : "";
+					value[3] += gatewayCheckBox.isSelected() ? "G" : "";
+					value[3] += hostCheckBox.isSelected() ? "H" : "";
+					
+					value[4] = interfaceComboBox.getSelectedItem().toString();
+					value[5] = "-";
+					
+					try {
+						IPLayer ip = ((IPLayer) m_LayerMgr.GetLayer("IP"));
+						ip.addEntry(value);
+					} catch (NoSuchAlgorithmException e1) {
+						e1.printStackTrace();
+					}
+					
+					updateStaticRoutingTableRow(value);
+					dispose();
+				}
+			}
+		}
+	}
+	
+	private class ProxyARPAddDlg extends JFrame {
+		
+		Container contentPane;
+		
+		JTextField ipAddressInputField;
+		JTextField macAddressInputField;
+		
+		JComboBox<String> interfaceComboBox;
+		
+		JButton addButton;
+		JButton cancelButton;
+		
+		
+		public ProxyARPAddDlg() {
+			setTitle("Form2");
+			setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			setBounds(250, 250, 400, 300);
+			contentPane = new JPanel();
+			((JComponent) contentPane).setBorder(new EmptyBorder(5, 5, 5, 5));
+			setContentPane(contentPane);
+			contentPane.setLayout(null);
+			
+			// Destination
+			JLabel destinationlbl = new JLabel("IP");
+			destinationlbl.setBounds(20, 25, 100, 30);
+			contentPane.add(destinationlbl);
+			destinationlbl.setFont(destinationlbl.getFont().deriveFont(18.0f));
+			
+			ipAddressInputField = new JTextField();
+			ipAddressInputField.setBounds(130, 25, 230, 30);
+			contentPane.add(ipAddressInputField);
+			
+			
+			// Network
+			JLabel netmasklbl = new JLabel("MAC");
+			netmasklbl.setBounds(20, 60, 100, 30);
+			contentPane.add(netmasklbl);
+			netmasklbl.setFont(netmasklbl.getFont().deriveFont(18.0f));
+			
+			macAddressInputField = new JTextField();
+			macAddressInputField.setBounds(130, 60, 230, 30);
+			contentPane.add(macAddressInputField);
+			
+			
+			// Interface
+			JLabel interfacelbl = new JLabel("Interface");
+			interfacelbl.setBounds(20, 95, 100, 30);
+			contentPane.add(interfacelbl);
+			interfacelbl.setFont(interfacelbl.getFont().deriveFont(18.0f));
+			
+			interfaceComboBox = new JComboBox<>();
+			
+			List<PcapIf> l = ((NILayer) m_LayerMgr.GetLayer("NI")).m_pAdapterList;
+			for (int i = 0; i < l.size(); i++)
+				interfaceComboBox.addItem(l.get(i).getDescription() + " : " + l.get(i).getName());
+			
+			interfaceComboBox.setBounds(130, 95, 230, 30);
+			interfaceComboBox.addActionListener(new setAddressListener());
+			contentPane.add(interfaceComboBox);// src address
+			
+			
+			// Buttons
+			addButton = new JButton("Add");
+			addButton.setBounds(120, 210, 80, 30);
+			addButton.addActionListener(new setAddressListener());
+			contentPane.add(addButton);
+			
+			cancelButton = new JButton("Cancel");
+			cancelButton.setBounds(210, 210, 80, 30);
+			cancelButton.addActionListener(new setAddressListener());
+			contentPane.add(cancelButton);
+			
+			
+			setDefaultCloseOperation(0);
+			setVisible(true);
+			setResizable(false);
+		}
+		
+		class setAddressListener implements ActionListener {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(e.getSource() == cancelButton) {
+					dispose();
+				}
+				else if(e.getSource() == addButton) {
+					String[] value = new String[3];
+					value[0] = ipAddressInputField.getText();
+					value[1] = macAddressInputField.getText();
+					value[2] = interfaceComboBox.getSelectedItem().toString();
+					
+					try {
+						ARPLayer arp = ((ARPLayer) m_LayerMgr.GetLayer("ARP"));
+						arp.addProxyEntry(value);
+					} catch (NoSuchAlgorithmException e1) {
+						e1.printStackTrace();
+					}
+					
+					updateProxyARPTableRow(value);
+					dispose();
+				}
 			}
 		}
 	}

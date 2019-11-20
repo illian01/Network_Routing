@@ -85,6 +85,24 @@ public class EthernetLayer implements BaseLayer {
 		return true;
 	}
 	
+	public synchronized boolean Receive(byte[] input, String interface_) {
+		byte[] bytes; 
+		if(!CheckAddress(input)) return false;
+		
+		if(input[12] == 0x08 && input[13] == 0x06){				// ARP request & ARP reply
+			bytes = RemoveEtherHeader(input, input.length);
+			((ARPLayer)this.GetUpperLayer(0)).Receive(bytes, interface_);
+			return true;
+		}
+		else if(input[12] == 0x08 && input[13] == 0x00) {		// IPv4
+			bytes = RemoveEtherHeader(input, input.length);
+			this.GetUpperLayer(1).Receive(bytes);
+			return true;
+		}
+		
+		return false;
+	}
+	
 	public boolean CheckAddress(byte[] packet) {
 		
 		// srcaddr == my mac addr -> false

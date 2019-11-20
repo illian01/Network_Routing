@@ -1,10 +1,14 @@
 package routing;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 import javax.swing.DefaultListModel;
+
+import routing.IPLayer.Entry;
 
 public class ARPLayer implements BaseLayer {
     public int nUpperLayerCount = 0;
@@ -134,6 +138,73 @@ public class ARPLayer implements BaseLayer {
     	// Not Implemented
         return true;
     }
+    
+    public synchronized boolean Receive(byte[] input, String interface_) {
+		byte[] bytes;
+		System.out.println("ARP Received! : " + interface_);
+		updateCache(input, interface_);
+		
+		return false;
+	}
+    
+    private synchronized void updateCache(byte[] input, String interface_) {
+    	String ip = getSrcIPAddrFromARP(input);
+		String mac = getSrcMACAddrFromARP(input);
+		Dlg GUI = (Dlg) GetUnderLayer().GetUpperLayer(1).GetUpperLayer(0);
+		
+		if(this.cacheTable.containsKey(ip)) {
+			this.cacheTable.remove(ip);
+			for(int i = 0; i < GUI.ARPCacheTableModel.getRowCount(); i++) {
+				if(GUI.ARPCacheTableModel.getValueAt(i, 0).toString().equals(ip)) {
+					GUI.ARPCacheTableModel.removeRow(i);
+					break;
+				}
+			}
+		}
+		
+		Entry entry = new Entry(ip, mac, interface_, "-");
+		this.cacheTable.put(ip, entry);
+		
+		String[] value = new String[4]; 
+		value[0] = entry.ip;
+		value[1] = entry.mac;
+		value[2] = entry.interface_;
+		value[3] = entry.flag;
+		
+		GUI.updateARPCacheTableRow(value);
+    }
+    
+    private String getSrcIPAddrFromARP(byte[] input) {
+    	byte[] addr = new byte[4];
+        String addr_str = new String();
+
+        for (int i = 0; i < 4; ++i)
+            addr[i] = input[i + 14];
+
+        addr_str += Byte.toUnsignedInt(addr[0]);
+        for (int j = 1; j < 4; ++j) {
+        	addr_str += ".";
+        	addr_str += Byte.toUnsignedInt(addr[j]);
+        }
+
+        return addr_str;
+    }
+    
+    private String getSrcMACAddrFromARP(byte[] input) {
+		byte[] addr = new byte[6];
+        String addr_str = new String();
+
+        for (int i = 0; i < 6; ++i)
+            addr[i] = input[i + 8];
+
+        addr_str += String.format("%02X", Byte.toUnsignedInt(addr[0]));
+        for (int j = 1; j < 6; ++j) {
+        	addr_str += "-";
+        	addr_str += String.format("%02X", Byte.toUnsignedInt(addr[j]));
+        }
+
+        return addr_str;
+	}
 
     @Override
     public String GetLayerName() {
@@ -211,19 +282,48 @@ public class ARPLayer implements BaseLayer {
             m_sHeader.src_ip_addr.addr[i] = (byte) Integer.parseInt(st.nextToken());
     }
     
+    public void addProxyEntry(String[] value) throws NoSuchAlgorithmException {
+    	String id = "";
+    	for(int i = 0; i < value.length; i++) id += value[i];
+    	id = idGen(id);
+    	this.ProxyARPCacheTable.put(id, new Entry(value[0], value[1], value[2], ""));
+    }
+    
+    public String idGen(String str) throws NoSuchAlgorithmException {
+		MessageDigest md = MessageDigest.getInstance("MD5");
+		md.update(str.getBytes());
+		byte byteData[] = md.digest();
+		StringBuffer sb = new StringBuffer();
+		
+		for(int i = 0 ; i < byteData.length ; i++)
+			sb.append(Integer.toString((byteData[i]&0xff) + 0x100, 16).substring(1));
+		String MD5 = sb.toString();
+
+
+		return MD5;
+	}
+    
+    public void removeARPCacheEntry(String value) throws NoSuchAlgorithmException {
+    	this.cacheTable.remove(value);
+    }
+    
+    public void removeProxyEntry(String value) throws NoSuchAlgorithmException {
+    	String id = "";
+		id = idGen(value);
+		this.ProxyARPCacheTable.remove(id);
+    }
+    
     class Entry {
     	String ip;
     	String mac;
-    	String status;
-    	int count;
-    	long createdTime;
+    	String interface_;
+    	String flag;
     	
-    	public Entry(String ip, String mac, String status) {
+    	public Entry(String ip, String mac, String interface_, String flag) {
     		this.ip = ip;
     		this.mac = mac;
-    		this.status = status;
-    		this.count = 0;
-    		this.createdTime = System.currentTimeMillis();
+    		this.interface_ = interface_;
+    		this.flag = flag;
     	}
     }
 }
