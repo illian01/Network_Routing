@@ -222,10 +222,11 @@ public class IPLayer implements BaseLayer {
 		return this.string_ip_src;
 	}
 	
-	public void addEntry(String destination, String netmask, String gateway, String flag, String interface_, String metric) throws NoSuchAlgorithmException {
-		String id = destination + netmask + gateway + flag + interface_ + metric;
+	public void addEntry(String[] value) throws NoSuchAlgorithmException {
+		String id = "";
+		for(int i = 0; i < value.length; i++) id += value[i];
 		id = idGen(id);
-		this.staticRoutingTable.put(id, new Entry(destination, netmask, gateway, flag, interface_, metric));
+		this.staticRoutingTable.put(id, new Entry(value));
 		System.out.println();
 	}
 	
@@ -251,13 +252,13 @@ public class IPLayer implements BaseLayer {
     	String interface_;
     	String metric;
     	
-    	public Entry(String destination, String netmask, String gateway, String flag, String interface_, String metric) {
-    		this.destination = destination;
-    		this.netmask = netmask;
-    		this.gateway = gateway;
-    		this.flag = flag;
-    		this.interface_ = interface_;
-    		this.metric = metric;
+    	public Entry(String[] value) {
+    		this.destination = value[0];
+    		this.netmask = value[1];
+    		this.gateway = value[2];
+    		this.flag = value[3];
+    		this.interface_ = value[4];
+    		this.metric = value[5];
     	}
     }
 }

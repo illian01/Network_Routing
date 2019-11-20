@@ -258,6 +258,17 @@ public class Dlg extends JFrame implements BaseLayer {
 		pUULayer.SetUnderLayer(this);
 
 	}
+	
+	public void updateStaticRoutingTableRow(String[] value) {
+		staticRoutingTableRows = new Vector<String>();
+		staticRoutingTableRows.addElement(value[0]);
+		staticRoutingTableRows.addElement(value[1]);
+		staticRoutingTableRows.addElement(value[2]);
+		staticRoutingTableRows.addElement(value[3]);
+		staticRoutingTableRows.addElement(value[4]);
+		staticRoutingTableRows.addElement(value[5]);
+		staticRoutingTableModel.addRow(staticRoutingTableRows);
+	}
 
 	
 	private class StaticRouteAddDlg extends JFrame {
@@ -380,31 +391,27 @@ public class Dlg extends JFrame implements BaseLayer {
 					dispose();
 				}
 				else if(e.getSource() == addButton) {
-					String destination = destinationInputField.getText();
-					String netmask = netmaskInputField.getText();
-					String gateway = gatewayInputField.getText();
-					String flag = "";
-					flag += upCheckBox.isSelected() ? "U" : "";
-					flag += gatewayCheckBox.isSelected() ? "G" : "";
-					flag += hostCheckBox.isSelected() ? "H" : "";
-					String interface_ = interfaceComboBox.getSelectedItem().toString();
-					String metric = "-";
+					String[] value = new String[6];
+					value[0] = destinationInputField.getText();
+					value[1] = netmaskInputField.getText();
+					value[2] = gatewayInputField.getText();
 					
-					staticRoutingTableRows = new Vector<String>();
-					staticRoutingTableRows.addElement(destination);
-					staticRoutingTableRows.addElement(netmask);
-					staticRoutingTableRows.addElement(gateway);
-					staticRoutingTableRows.addElement(flag);
-					staticRoutingTableRows.addElement(interface_);
-					staticRoutingTableRows.addElement(metric);
-					staticRoutingTableModel.addRow(staticRoutingTableRows);
+					value[3] += upCheckBox.isSelected() ? "U" : "";
+					value[3] += gatewayCheckBox.isSelected() ? "G" : "";
+					value[3] += hostCheckBox.isSelected() ? "H" : "";
+					
+					value[4] = interfaceComboBox.getSelectedItem().toString();
+					value[5] = "-";
 					
 					try {
 						IPLayer ip = ((IPLayer) m_LayerMgr.GetLayer("IP"));
-						ip.addEntry(destination, netmask, gateway, flag, interface_, metric);
+						ip.addEntry(value);
 					} catch (NoSuchAlgorithmException e1) {
 						e1.printStackTrace();
 					}
+					
+					updateStaticRoutingTableRow(value);
+					dispose();
 				}
 			}
 		}
