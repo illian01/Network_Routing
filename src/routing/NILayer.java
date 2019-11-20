@@ -51,6 +51,11 @@ public class NILayer implements BaseLayer {
 			return;
 		}
 	}
+	
+	public void activateAllAdapter() {
+		for(int i = 0; i < m_pAdapterList.size(); i++)
+			SetAdapterNumber(i);
+	}
 
 	public void SetAdapterNumber(int iNum) {
 		m_iNumAdapter = iNum;

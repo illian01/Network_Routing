@@ -80,6 +80,7 @@ public class Dlg extends JFrame implements BaseLayer {
 		m_LayerMgr.AddLayer(new Dlg("GUI"));
 		m_LayerMgr.ConnectLayers(" NI ( *Eth ( *ARP +IP ( *GUI ) ) )");
 		m_LayerMgr.GetLayer("IP").SetUnderLayer(m_LayerMgr.GetLayer("ARP"));
+		((NILayer)m_LayerMgr.GetLayer("NI")).activateAllAdapter();
 	}
 
 	public Dlg(String pName) throws SocketException {
