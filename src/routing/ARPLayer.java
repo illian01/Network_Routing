@@ -303,6 +303,16 @@ public class ARPLayer implements BaseLayer {
 		return MD5;
 	}
     
+    public void removeARPCacheEntry(String value) throws NoSuchAlgorithmException {
+    	this.cacheTable.remove(value);
+    }
+    
+    public void removeProxyEntry(String value) throws NoSuchAlgorithmException {
+    	String id = "";
+		id = idGen(value);
+		this.ProxyARPCacheTable.remove(id);
+    }
+    
     class Entry {
     	String ip;
     	String mac;

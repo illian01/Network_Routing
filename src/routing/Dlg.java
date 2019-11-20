@@ -225,10 +225,39 @@ public class Dlg extends JFrame implements BaseLayer {
 					staticRoutingTableModel.removeRow(selected[i]);
 				}
 			}
+			else if(e.getSource() == ARPCacheTableDeleteButton) {
+				int[] selected = ARPCacheTable.getSelectedRows();
+				for(int i = selected.length - 1; i >= 0; i--) {
+					String str = ARPCacheTableModel.getValueAt(selected[i], 0).toString();
+					
+					try {
+						ARPLayer arp = ((ARPLayer) m_LayerMgr.GetLayer("ARP"));
+						arp.removeARPCacheEntry(str);
+					} catch (NoSuchAlgorithmException e1) {
+						e1.printStackTrace();
+					}
+					ARPCacheTableModel.removeRow(selected[i]);
+				}
+			}
 			else if(e.getSource() == proxyARPTableAddButton) {
 				new ProxyARPAddDlg();
 			}
-			// Not Implemented
+			else if(e.getSource() == proxyARPTableDeleteButton) {
+				int[] selected = proxyARPTable.getSelectedRows();
+				for(int i = selected.length - 1; i >= 0; i--) {
+					String str = "";
+					for(int j = 0; j < 3; j++)
+						str += proxyCacheTableModel.getValueAt(selected[i], j).toString();
+					
+					try {
+						ARPLayer arp = ((ARPLayer) m_LayerMgr.GetLayer("ARP"));
+						arp.removeProxyEntry(str);
+					} catch (NoSuchAlgorithmException e1) {
+						e1.printStackTrace();
+					}
+					proxyCacheTableModel.removeRow(selected[i]);
+				}
+			}
 		}
 	}
 
