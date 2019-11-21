@@ -5,8 +5,11 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+
+import org.jnetpcap.PcapAddr;
 
 import routing.ARPLayer.Entry;
 
@@ -139,6 +142,42 @@ public class IPLayer implements BaseLayer {
 		// Not Implemented
 		return true;
 	}
+	
+	public synchronized boolean Receive(byte[] input, int deviceNum) {
+		// Not Implemented
+		String[] token = NILayer.m_pAdapterList.get(deviceNum).getAddresses().get(0).getAddr().toString().split("\\.");
+		if (token[0].contains("INET6"))
+			return false;
+		String deviceIP = token[0].substring(7, token[0].length()) + "." + token[1] + "." + token[2] + "."
+				+ token[3].substring(0, token[3].length() - 1);
+		
+		String dstIP = extractDstIP(input);
+		
+		if(deviceIP.equals(dstIP)) {
+			System.out.println("mine!");
+		}
+		else {
+			System.out.println("not mine!");
+		}
+		
+		return true;
+	}
+	
+	private String extractDstIP(byte[] input) {
+    	byte[] addr = new byte[4];
+        String addr_str = new String();
+
+        for (int i = 0; i < 4; ++i)
+            addr[i] = input[i + 16];
+
+        addr_str += Byte.toUnsignedInt(addr[0]);
+        for (int j = 1; j < 4; ++j) {
+        	addr_str += ".";
+        	addr_str += Byte.toUnsignedInt(addr[j]);
+        }
+
+        return addr_str;
+    }
 	
 	public boolean CheckAddress(byte[] packet) {
 		

@@ -96,7 +96,7 @@ public class EthernetLayer implements BaseLayer {
 		}
 		else if(input[12] == 0x08 && input[13] == 0x00) {		// IPv4
 			bytes = RemoveEtherHeader(input, input.length);
-			this.GetUpperLayer(1).Receive(bytes);
+			((IPLayer)this.GetUpperLayer(1)).Receive(bytes, deviceNum);
 			return true;
 		}
 		
