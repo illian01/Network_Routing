@@ -1,9 +1,11 @@
 package routing;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import javax.swing.plaf.synth.SynthSeparatorUI;
 
@@ -20,9 +22,10 @@ public class NILayer implements BaseLayer {
 	public ArrayList<BaseLayer> p_aUpperLayer = new ArrayList<BaseLayer>();
 
 	int m_iNumAdapter;
-	public Pcap m_AdapterObject;
+	public static List<Pcap> m_AdapterObject = new ArrayList<>();
 	public PcapIf device;
 	public static List<PcapIf> m_pAdapterList;
+	public static List<DeviceData> deviceData = new ArrayList<>();
 	StringBuilder errbuf = new StringBuilder();
 
 	static {
@@ -53,8 +56,10 @@ public class NILayer implements BaseLayer {
 	}
 	
 	public void activateAllAdapter() {
-		for(int i = 0; i < m_pAdapterList.size(); i++)
+		for(int i = 0; i < m_pAdapterList.size(); i++) {
 			SetAdapterNumber(i);
+			deviceData.add(new DeviceData(i));
+		}
 	}
 
 	public void SetAdapterNumber(int iNum) {
@@ -67,14 +72,24 @@ public class NILayer implements BaseLayer {
 		int snaplen = 64 * 1024;
 		int flags = Pcap.MODE_PROMISCUOUS;
 		int timeout = 3 * 1000;
-		m_AdapterObject = Pcap.openLive(m_pAdapterList.get(m_iNumAdapter).getName(), snaplen, flags, timeout, errbuf);
+		m_AdapterObject.add(Pcap.openLive(m_pAdapterList.get(m_iNumAdapter).getName(), snaplen, flags, timeout, errbuf));
 	}
 
 	public synchronized boolean Send(byte[] input, int length) {
-
+		/*
 		ByteBuffer buf = ByteBuffer.wrap(input);
 		if (m_AdapterObject.sendPacket(buf) != Pcap.OK) {
 			System.err.println(m_AdapterObject.getErr());
+			return false;
+		}
+		*/
+		return true;
+	}
+	
+	public synchronized boolean Send(byte[] input, int length, int deviceNum) {
+		ByteBuffer buf = ByteBuffer.wrap(input);
+		if (m_AdapterObject.get(deviceNum).sendPacket(buf) != Pcap.OK) {
+			System.err.println(m_AdapterObject.get(deviceNum).getErr());
 			return false;
 		}
 
@@ -83,7 +98,7 @@ public class NILayer implements BaseLayer {
 
 	public boolean Receive() {
 		
-		Receive_Thread thread = new Receive_Thread(m_AdapterObject, this.GetUpperLayer(0), m_iNumAdapter);
+		Receive_Thread thread = new Receive_Thread(m_AdapterObject.get(m_iNumAdapter), this.GetUpperLayer(0), m_iNumAdapter);
 		Thread obj = new Thread(thread);
 		obj.start();
 
@@ -161,5 +176,34 @@ public class NILayer implements BaseLayer {
 		pUULayer.SetUnderLayer(this);
 
 	}
-
+	
+	class DeviceData {
+		byte[] macByte;
+		byte[] ipByte;
+		String macString;
+		String ipString;
+		
+		public DeviceData(int deviceNum) {
+			String[] token = NILayer.m_pAdapterList.get(deviceNum).getAddresses().get(0).getAddr().toString().split("\\.");
+			if (token[0].contains("INET6"))
+				return ;
+			String ipstring = token[0].substring(7, token[0].length()) + "." + token[1] + "." + token[2] + "."
+					+ token[3].substring(0, token[3].length() - 1);
+			
+			byte[] macbyte = null;
+			try {
+				macbyte = NILayer.m_pAdapterList.get(deviceNum).getHardwareAddress();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+			String macstring = AddressTranslator.byteToString(macbyte);
+			byte[] ipbyte = AddressTranslator.stringToByte(ipstring);
+			
+			this.macByte = macbyte;
+			this.ipByte = ipbyte;
+			this.macString = macstring;
+			this.ipString = ipstring;
+		}
+	}
 }

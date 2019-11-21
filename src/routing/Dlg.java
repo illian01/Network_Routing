@@ -330,6 +330,15 @@ public class Dlg extends JFrame implements BaseLayer {
 		ARPCacheTableModel.addRow(ARPCacheTableRows);
 	}
 	
+	public synchronized void removeARPCacheTableRow(String addr) {
+		for(int i = 0; i < ARPCacheTableModel.getRowCount(); i++) {
+			if(ARPCacheTableModel.getValueAt(i, 0).toString().equals(addr)) {
+				ARPCacheTableModel.removeRow(i); 
+				break;
+			}
+		}
+	}
+	
 	public synchronized void updateProxyARPTableRow(String[] value) {
 		proxyCacheTableRows = new Vector<String>();
 		proxyCacheTableRows.addElement(value[0]);

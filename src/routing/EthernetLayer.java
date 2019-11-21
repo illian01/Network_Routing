@@ -81,6 +81,11 @@ public class EthernetLayer implements BaseLayer {
 		return true;
 	}
 	
+	public synchronized boolean Send(byte[] input, int length, int deviceNum) {
+		// Not Implemented
+		return true;
+	}
+	
 	public synchronized boolean Receive(byte[] input) {
 		// Not Implemented
 		return true;
@@ -88,14 +93,8 @@ public class EthernetLayer implements BaseLayer {
 	
 	public synchronized boolean Receive(byte[] input, int deviceNum) {
 		byte[] bytes; 
-		byte[] address = null;
-		try {
-			address = NILayer.m_pAdapterList.get(deviceNum).getHardwareAddress();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 		
-		if(!CheckAddress(input, address)) return false;
+		if(!CheckAddress(input, deviceNum)) return false;
 		
 		if(input[12] == 0x08 && input[13] == 0x06){				// ARP request & ARP reply
 			bytes = RemoveEtherHeader(input, input.length);
@@ -111,11 +110,11 @@ public class EthernetLayer implements BaseLayer {
 		return false;
 	}
 	
-	public boolean CheckAddress(byte[] packet, byte[] address) {
+	public boolean CheckAddress(byte[] packet, int deviceNum) {
 		
 		// srcaddr == my mac addr -> false
 		for (int i = 0; i < 6; i++) {
-			if(packet[i+6] != address[i]) break;
+			if(packet[i+6] != NILayer.deviceData.get(deviceNum).macByte[i]) break;
 			if(i == 5) return false;
 		}
 		
@@ -127,7 +126,7 @@ public class EthernetLayer implements BaseLayer {
 		
 		// dstaddr != my mac addr -> false
 		for (int i = 0; i < 6; i++) {
-			if(packet[i] != address[i])
+			if(packet[i] != NILayer.deviceData.get(deviceNum).macByte[i])
 				return false;
 		}
 		
