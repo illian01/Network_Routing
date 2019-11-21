@@ -330,6 +330,15 @@ public class Dlg extends JFrame implements BaseLayer {
 		ARPCacheTableModel.addRow(ARPCacheTableRows);
 	}
 	
+	public synchronized void removeARPCacheTableRow(String addr) {
+		for(int i = 0; i < ARPCacheTableModel.getRowCount(); i++) {
+			if(ARPCacheTableModel.getValueAt(i, 0).toString().equals(addr)) {
+				ARPCacheTableModel.removeRow(i); 
+				break;
+			}
+		}
+	}
+	
 	public synchronized void updateProxyARPTableRow(String[] value) {
 		proxyCacheTableRows = new Vector<String>();
 		proxyCacheTableRows.addElement(value[0]);
@@ -469,7 +478,7 @@ public class Dlg extends JFrame implements BaseLayer {
 					value[3] += gatewayCheckBox.isSelected() ? "G" : "";
 					value[3] += hostCheckBox.isSelected() ? "H" : "";
 					
-					value[4] = interfaceComboBox.getSelectedItem().toString();
+					value[4] = Integer.toString(interfaceComboBox.getSelectedIndex());
 					value[5] = "-";
 					
 					try {
@@ -574,7 +583,7 @@ public class Dlg extends JFrame implements BaseLayer {
 					String[] value = new String[3];
 					value[0] = ipAddressInputField.getText();
 					value[1] = macAddressInputField.getText();
-					value[2] = interfaceComboBox.getSelectedItem().toString();
+					value[2] = Integer.toString(interfaceComboBox.getSelectedIndex());
 					
 					try {
 						ARPLayer arp = ((ARPLayer) m_LayerMgr.GetLayer("ARP"));

@@ -5,8 +5,11 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+
+import org.jnetpcap.PcapAddr;
 
 import routing.ARPLayer.Entry;
 
@@ -125,7 +128,6 @@ public class IPLayer implements BaseLayer {
 		return true;
 	}
 	
-
 	public byte[] RemoveIPHeader(byte[] input, int length) {
 		byte[] buf = new byte[length - 20];
 
@@ -140,18 +142,70 @@ public class IPLayer implements BaseLayer {
 		return true;
 	}
 	
-	public boolean CheckAddress(byte[] packet) {
+	public synchronized boolean Receive(byte[] input, int deviceNum) {
+		if(!CheckAddress(input, deviceNum)) return false;
+		String deviceIP = NILayer.deviceData.get(deviceNum).ipString;
+		String dstString = extractDstIP(input);
+		
+		// Route only if myIP != dstIP
+		if(!deviceIP.equals(dstString)) {
+			
+			// for all element
+			for(String key : staticRoutingTable.keySet()) {
+				Entry entry = staticRoutingTable.get(key);
+				
+				byte[] dstByte = AddressTranslator.stringToByte(dstString);
+				byte[] maskbyte = AddressTranslator.stringToByte(entry.netmask);
+				byte[] dstNet = masking(dstByte, maskbyte);
+				String dstNetString = AddressTranslator.byteToString(dstNet);
+				
+				if(entry.destination.equals(dstNetString)) {
+					if(entry.gateway.equals("connected")) {
+						// send to connected host
+					}
+					else {
+						// send to gateway
+					}
+				}
+				else if(entry.destination.equals("0.0.0.0")) {
+					// send to gateway
+				}
+			}
+		}
+		
+		return true;
+	}
+	
+	private byte[] masking(byte[] address, byte[] mask) {
+		byte[] masked = new byte[4];
+		for(int i = 0; i < 4; i++)
+			masked[i] = (byte) (address[i] & mask[i]);
+		
+		return masked;
+	}
+	
+	private String extractDstIP(byte[] input) {
+    	byte[] addr = new byte[4];
+        String addr_str = new String();
+
+        for (int i = 0; i < 4; ++i)
+            addr[i] = input[i + 16];
+
+        addr_str += Byte.toUnsignedInt(addr[0]);
+        for (int j = 1; j < 4; ++j) {
+        	addr_str += ".";
+        	addr_str += Byte.toUnsignedInt(addr[j]);
+        }
+
+        return addr_str;
+    }
+	
+	public boolean CheckAddress(byte[] packet, int deviceNum) {
 		
 		// srcaddr == my ip addr -> false
 		for (int i = 0; i < 4; i++) {
-			if(packet[i+12] != m_sHeader.ip_src.addr[i]) break;
+			if(packet[i+12] != NILayer.deviceData.get(deviceNum).ipByte[i]) break;
 			if(i == 5) return false;
-		}
-
-		// dstaddr != my ip addr -> false
-		for (int i = 0; i < 4; i++) {
-			if(packet[i+16] != m_sHeader.ip_src.addr[i])
-				return false;
 		}
 		
 		return true;
@@ -244,7 +298,6 @@ public class IPLayer implements BaseLayer {
 		for(int i = 0 ; i < byteData.length ; i++)
 			sb.append(Integer.toString((byteData[i]&0xff) + 0x100, 16).substring(1));
 		String MD5 = sb.toString();
-
 
 		return MD5;
 	}

@@ -8,8 +8,6 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import javax.swing.DefaultListModel;
 
-import routing.IPLayer.Entry;
-
 public class ARPLayer implements BaseLayer {
     public int nUpperLayerCount = 0;
     public String pLayerName = null;
@@ -75,6 +73,9 @@ public class ARPLayer implements BaseLayer {
     public ARPLayer(String pName) {
         pLayerName = pName;
         setHeader();
+        ARPRepeatThread thread = new ARPRepeatThread();
+		Thread obj = new Thread(thread);
+		obj.start();
     }
 
     public void setHeader() {
@@ -92,6 +93,33 @@ public class ARPLayer implements BaseLayer {
         m_sHeader.dst_mac_addr.addr[3] = (byte) 0x00;
         m_sHeader.dst_mac_addr.addr[4] = (byte) 0x00;
         m_sHeader.dst_mac_addr.addr[5] = (byte) 0x00;
+    }
+    
+    public void setHeader(String dstIP, int deviceNum) {
+    	StringTokenizer st = new StringTokenizer(dstIP, "\\.");
+
+        m_sHeader.src_mac_addr.addr[0] = NILayer.deviceData.get(deviceNum).macByte[0];
+        m_sHeader.src_mac_addr.addr[1] = NILayer.deviceData.get(deviceNum).macByte[1];
+        m_sHeader.src_mac_addr.addr[2] = NILayer.deviceData.get(deviceNum).macByte[2];
+        m_sHeader.src_mac_addr.addr[3] = NILayer.deviceData.get(deviceNum).macByte[3];
+        m_sHeader.src_mac_addr.addr[4] = NILayer.deviceData.get(deviceNum).macByte[4];
+        m_sHeader.src_mac_addr.addr[5] = NILayer.deviceData.get(deviceNum).macByte[5];
+        m_sHeader.src_ip_addr.addr[0] = NILayer.deviceData.get(deviceNum).ipByte[0];
+        m_sHeader.src_ip_addr.addr[1] = NILayer.deviceData.get(deviceNum).ipByte[1];
+        m_sHeader.src_ip_addr.addr[2] = NILayer.deviceData.get(deviceNum).ipByte[2];
+        m_sHeader.src_ip_addr.addr[3] = NILayer.deviceData.get(deviceNum).ipByte[3]; 
+    	
+    	m_sHeader.dst_ip_addr.addr[0] = (byte) Integer.parseInt(st.nextToken());
+		m_sHeader.dst_ip_addr.addr[1] = (byte) Integer.parseInt(st.nextToken());
+		m_sHeader.dst_ip_addr.addr[2] = (byte) Integer.parseInt(st.nextToken());
+		m_sHeader.dst_ip_addr.addr[3] = (byte) Integer.parseInt(st.nextToken());
+		m_sHeader.dst_mac_addr.addr[0] = (byte) 0x00;
+		m_sHeader.dst_mac_addr.addr[1] = (byte) 0x00;
+		m_sHeader.dst_mac_addr.addr[2] = (byte) 0x00;
+		m_sHeader.dst_mac_addr.addr[3] = (byte) 0x00;
+		m_sHeader.dst_mac_addr.addr[4] = (byte) 0x00;
+		m_sHeader.dst_mac_addr.addr[5] = (byte) 0x00;
+		m_sHeader.opcode[1] = 0x01;
     }
 
     private byte[] ObjToByte() {
@@ -139,30 +167,35 @@ public class ARPLayer implements BaseLayer {
         return true;
     }
     
-    public synchronized boolean Receive(byte[] input, String interface_) {
+    public synchronized boolean Receive(byte[] input, int deviceNum) {
 		byte[] bytes;
-		System.out.println("ARP Received! : " + interface_);
-		updateCache(input, interface_);
+		updateCache(input, deviceNum, "completed");
 		
 		return false;
 	}
     
-    private synchronized void updateCache(byte[] input, String interface_) {
+    private synchronized void updateCache(String ip, Entry entry) {
+    	Dlg GUI = (Dlg) GetUnderLayer().GetUpperLayer(1).GetUpperLayer(0);
+    	String[] value = new String[4]; 
+		value[0] = entry.ip;
+		value[1] = entry.mac;
+		value[2] = entry.interface_;
+		value[3] = entry.flag;
+    	this.cacheTable.put(ip, entry);
+    	GUI.updateARPCacheTableRow(value);
+    }
+    
+    private synchronized void updateCache(byte[] input, int deviceNum, String flag) {
     	String ip = getSrcIPAddrFromARP(input);
 		String mac = getSrcMACAddrFromARP(input);
 		Dlg GUI = (Dlg) GetUnderLayer().GetUpperLayer(1).GetUpperLayer(0);
 		
 		if(this.cacheTable.containsKey(ip)) {
 			this.cacheTable.remove(ip);
-			for(int i = 0; i < GUI.ARPCacheTableModel.getRowCount(); i++) {
-				if(GUI.ARPCacheTableModel.getValueAt(i, 0).toString().equals(ip)) {
-					GUI.ARPCacheTableModel.removeRow(i);
-					break;
-				}
-			}
+			GUI.removeARPCacheTableRow(ip);
 		}
 		
-		Entry entry = new Entry(ip, mac, interface_, "-");
+		Entry entry = new Entry(ip, mac, Integer.toString(deviceNum), flag);
 		this.cacheTable.put(ip, entry);
 		
 		String[] value = new String[4]; 
@@ -299,12 +332,80 @@ public class ARPLayer implements BaseLayer {
     	String mac;
     	String interface_;
     	String flag;
+    	int count;
+    	long createdTime;
     	
     	public Entry(String ip, String mac, String interface_, String flag) {
     		this.ip = ip;
     		this.mac = mac;
     		this.interface_ = interface_;
     		this.flag = flag;
+    		this.count = 0;
+    		this.createdTime = System.currentTimeMillis();
     	}
     }
+    
+    class SendThread implements Runnable {
+    	String dst_addr;
+    	byte[] input;
+    	int deviceNum;
+    	
+		public SendThread(String dst_addr, byte[] input, int deviceNum) {
+			this.dst_addr = dst_addr;
+			this.input = input;
+			this.deviceNum = deviceNum;
+		}
+
+		public void run() {
+			while (cacheTable.containsKey(dst_addr)) {
+				Entry entry = cacheTable.get(dst_addr);
+				if(entry.flag == "completed") {
+					((EthernetLayer) GetUnderLayer()).Setenet_dstaddr(cacheTable.get(dst_addr).mac);
+					((EthernetLayer)GetUnderLayer()).Send(input, input.length, deviceNum);
+					break;
+				}
+				else if(entry.flag == "failed") break;
+			}
+		}
+		
+	}
+    
+    class ARPRepeatThread implements Runnable {
+
+		public ARPRepeatThread() {}
+
+		public void run() {
+			while (true) {
+				for(String str : cacheTable.keySet()) {
+		    		Entry entry = cacheTable.get(str);
+		    		if(entry.flag == "completed") {
+		    			if(System.currentTimeMillis() - entry.createdTime > 1200000) { // 1200000ms == 20 min
+		    				cacheTable.remove(str);
+		    			}
+		    		}
+		    		else if(entry.flag == "incomplete") {
+		    			if(entry.count == 3) {
+		    				Dlg GUI = (Dlg) GetUnderLayer().GetUpperLayer(1).GetUpperLayer(0);
+		    				entry.flag = "failed";
+		    				GUI.removeARPCacheTableRow(entry.ip);
+		    			}
+		    			else {
+		    				int deviceNum = Integer.parseInt(entry.interface_);
+		    				setHeader(entry.ip, deviceNum);
+		    				byte[] msg = ObjToByte();
+		    				entry.count++;
+		    				GetUnderLayer().Send(msg, msg.length);
+		    			}
+		    			
+		    		}
+		    	}
+				
+				try {
+					Thread.sleep(60000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
 }

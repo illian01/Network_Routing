@@ -1,5 +1,6 @@
 package routing;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
@@ -80,34 +81,40 @@ public class EthernetLayer implements BaseLayer {
 		return true;
 	}
 	
+	public synchronized boolean Send(byte[] input, int length, int deviceNum) {
+		// Not Implemented
+		return true;
+	}
+	
 	public synchronized boolean Receive(byte[] input) {
 		// Not Implemented
 		return true;
 	}
 	
-	public synchronized boolean Receive(byte[] input, String interface_) {
+	public synchronized boolean Receive(byte[] input, int deviceNum) {
 		byte[] bytes; 
-		if(!CheckAddress(input)) return false;
+		
+		if(!CheckAddress(input, deviceNum)) return false;
 		
 		if(input[12] == 0x08 && input[13] == 0x06){				// ARP request & ARP reply
 			bytes = RemoveEtherHeader(input, input.length);
-			((ARPLayer)this.GetUpperLayer(0)).Receive(bytes, interface_);
+			((ARPLayer)this.GetUpperLayer(0)).Receive(bytes, deviceNum);
 			return true;
 		}
 		else if(input[12] == 0x08 && input[13] == 0x00) {		// IPv4
 			bytes = RemoveEtherHeader(input, input.length);
-			this.GetUpperLayer(1).Receive(bytes);
+			((IPLayer)this.GetUpperLayer(1)).Receive(bytes, deviceNum);
 			return true;
 		}
 		
 		return false;
 	}
 	
-	public boolean CheckAddress(byte[] packet) {
+	public boolean CheckAddress(byte[] packet, int deviceNum) {
 		
 		// srcaddr == my mac addr -> false
 		for (int i = 0; i < 6; i++) {
-			if(packet[i+6] != m_sHeader.enet_srcaddr.addr[i]) break;
+			if(packet[i+6] != NILayer.deviceData.get(deviceNum).macByte[i]) break;
 			if(i == 5) return false;
 		}
 		
@@ -119,7 +126,7 @@ public class EthernetLayer implements BaseLayer {
 		
 		// dstaddr != my mac addr -> false
 		for (int i = 0; i < 6; i++) {
-			if(packet[i] != m_sHeader.enet_srcaddr.addr[i])
+			if(packet[i] != NILayer.deviceData.get(deviceNum).macByte[i])
 				return false;
 		}
 		
