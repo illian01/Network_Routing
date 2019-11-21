@@ -245,9 +245,7 @@ public class Dlg extends JFrame implements BaseLayer {
 			else if(e.getSource() == proxyARPTableDeleteButton) {
 				int[] selected = proxyARPTable.getSelectedRows();
 				for(int i = selected.length - 1; i >= 0; i--) {
-					String str = "";
-					for(int j = 0; j < 3; j++)
-						str += proxyCacheTableModel.getValueAt(selected[i], j).toString();
+					String str = proxyCacheTableModel.getValueAt(selected[i], 0).toString();
 					
 					try {
 						ARPLayer arp = ((ARPLayer) m_LayerMgr.GetLayer("ARP"));
@@ -502,7 +500,7 @@ public class Dlg extends JFrame implements BaseLayer {
 		
 		
 		public ProxyARPAddDlg() {
-			setTitle("Form2");
+			setTitle("Form3");
 			setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			setBounds(250, 250, 400, 300);
 			contentPane = new JPanel();

@@ -283,34 +283,15 @@ public class ARPLayer implements BaseLayer {
     }
     
     public void addProxyEntry(String[] value) throws NoSuchAlgorithmException {
-    	String id = "";
-    	for(int i = 0; i < value.length; i++) id += value[i];
-    	id = idGen(id);
-    	this.ProxyARPCacheTable.put(id, new Entry(value[0], value[1], value[2], ""));
+    	this.ProxyARPCacheTable.put(value[0], new Entry(value[0], value[1], value[2], ""));
     }
-    
-    public String idGen(String str) throws NoSuchAlgorithmException {
-		MessageDigest md = MessageDigest.getInstance("MD5");
-		md.update(str.getBytes());
-		byte byteData[] = md.digest();
-		StringBuffer sb = new StringBuffer();
-		
-		for(int i = 0 ; i < byteData.length ; i++)
-			sb.append(Integer.toString((byteData[i]&0xff) + 0x100, 16).substring(1));
-		String MD5 = sb.toString();
-
-
-		return MD5;
-	}
     
     public void removeARPCacheEntry(String value) throws NoSuchAlgorithmException {
     	this.cacheTable.remove(value);
     }
     
     public void removeProxyEntry(String value) throws NoSuchAlgorithmException {
-    	String id = "";
-		id = idGen(value);
-		this.ProxyARPCacheTable.remove(id);
+		this.ProxyARPCacheTable.remove(value);
     }
     
     class Entry {
