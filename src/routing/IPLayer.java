@@ -152,9 +152,16 @@ public class IPLayer implements BaseLayer {
 				+ token[3].substring(0, token[3].length() - 1);
 		
 		String dstIP = extractDstIP(input);
-		
+		int interface_ = -1;
 		if(!deviceIP.equals(dstIP)) {
-			System.out.println("Do Route!");
+			for(String key : staticRoutingTable.keySet()) {
+				Entry entry = staticRoutingTable.get(key);
+				if(entry.destination.equals(dstIP)) {
+					interface_ = Integer.parseInt(entry.interface_);
+					((ARPLayer)GetUnderLayer()).Send(input, input.length, interface_);
+					break;
+				}
+			}
 		}
 		
 		return true;

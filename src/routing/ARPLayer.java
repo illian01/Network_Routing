@@ -133,6 +133,11 @@ public class ARPLayer implements BaseLayer {
 	    // Not Implemented
         return true;
     }
+    
+    public synchronized boolean Send(byte[] input, int length, int deviceNum) {
+	    // Not Implemented
+        return true;
+    }
 
     public synchronized boolean Receive(byte[] input) {
     	// Not Implemented
