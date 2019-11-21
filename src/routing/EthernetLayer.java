@@ -1,5 +1,6 @@
 package routing;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
@@ -87,7 +88,14 @@ public class EthernetLayer implements BaseLayer {
 	
 	public synchronized boolean Receive(byte[] input, int deviceNum) {
 		byte[] bytes; 
-		if(!CheckAddress(input)) return false;
+		byte[] address = null;
+		try {
+			address = NILayer.m_pAdapterList.get(deviceNum).getHardwareAddress();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		if(!CheckAddress(input, address)) return false;
 		
 		if(input[12] == 0x08 && input[13] == 0x06){				// ARP request & ARP reply
 			bytes = RemoveEtherHeader(input, input.length);
@@ -103,11 +111,11 @@ public class EthernetLayer implements BaseLayer {
 		return false;
 	}
 	
-	public boolean CheckAddress(byte[] packet) {
+	public boolean CheckAddress(byte[] packet, byte[] address) {
 		
 		// srcaddr == my mac addr -> false
 		for (int i = 0; i < 6; i++) {
-			if(packet[i+6] != m_sHeader.enet_srcaddr.addr[i]) break;
+			if(packet[i+6] != address[i]) break;
 			if(i == 5) return false;
 		}
 		
@@ -119,7 +127,7 @@ public class EthernetLayer implements BaseLayer {
 		
 		// dstaddr != my mac addr -> false
 		for (int i = 0; i < 6; i++) {
-			if(packet[i] != m_sHeader.enet_srcaddr.addr[i])
+			if(packet[i] != address[i])
 				return false;
 		}
 		

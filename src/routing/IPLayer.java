@@ -153,11 +153,8 @@ public class IPLayer implements BaseLayer {
 		
 		String dstIP = extractDstIP(input);
 		
-		if(deviceIP.equals(dstIP)) {
-			System.out.println("mine!");
-		}
-		else {
-			System.out.println("not mine!");
+		if(!deviceIP.equals(dstIP)) {
+			System.out.println("Do Route!");
 		}
 		
 		return true;
