@@ -22,7 +22,7 @@ public class NILayer implements BaseLayer {
 	int m_iNumAdapter;
 	public Pcap m_AdapterObject;
 	public PcapIf device;
-	public List<PcapIf> m_pAdapterList;
+	public static List<PcapIf> m_pAdapterList;
 	StringBuilder errbuf = new StringBuilder();
 
 	static {
@@ -83,7 +83,7 @@ public class NILayer implements BaseLayer {
 
 	public boolean Receive() {
 		
-		Receive_Thread thread = new Receive_Thread(m_AdapterObject, this.GetUpperLayer(0), m_pAdapterList.get(m_iNumAdapter));
+		Receive_Thread thread = new Receive_Thread(m_AdapterObject, this.GetUpperLayer(0), m_iNumAdapter);
 		Thread obj = new Thread(thread);
 		obj.start();
 
@@ -93,12 +93,12 @@ public class NILayer implements BaseLayer {
 	class Receive_Thread implements Runnable {
 		byte[] data;
 		Pcap AdapterObject;
-		PcapIf device;
+		int deviceNum;
 		BaseLayer UpperLayer;
 
-		public Receive_Thread(Pcap m_AdapterObject, BaseLayer m_UpperLayer, PcapIf device) {
+		public Receive_Thread(Pcap m_AdapterObject, BaseLayer m_UpperLayer, int deviceNum) {
 			this.AdapterObject = m_AdapterObject;
-			this.device = device;
+			this.deviceNum = deviceNum;
 			this.UpperLayer = m_UpperLayer;
 		}
 
@@ -106,9 +106,8 @@ public class NILayer implements BaseLayer {
 			while (true) {
 				PcapPacketHandler<String> jpacketHandler = new PcapPacketHandler<String>() {
 					public void nextPacket(PcapPacket packet, String user) {
-						String str = device.getDescription() + " : " + device.getName();
 						data = packet.getByteArray(0, packet.size());
-						((EthernetLayer)UpperLayer).Receive(data, str);
+						((EthernetLayer)UpperLayer).Receive(data, deviceNum);
 					}
 				};
 

@@ -139,15 +139,15 @@ public class ARPLayer implements BaseLayer {
         return true;
     }
     
-    public synchronized boolean Receive(byte[] input, String interface_) {
+    public synchronized boolean Receive(byte[] input, int deviceNum) {
 		byte[] bytes;
-		System.out.println("ARP Received! : " + interface_);
-		updateCache(input, interface_);
+		System.out.println("ARP Received! : " + deviceNum);
+		updateCache(input, deviceNum);
 		
 		return false;
 	}
     
-    private synchronized void updateCache(byte[] input, String interface_) {
+    private synchronized void updateCache(byte[] input, int deviceNum) {
     	String ip = getSrcIPAddrFromARP(input);
 		String mac = getSrcMACAddrFromARP(input);
 		Dlg GUI = (Dlg) GetUnderLayer().GetUpperLayer(1).GetUpperLayer(0);
@@ -162,7 +162,7 @@ public class ARPLayer implements BaseLayer {
 			}
 		}
 		
-		Entry entry = new Entry(ip, mac, interface_, "-");
+		Entry entry = new Entry(ip, mac, Integer.toString(deviceNum), "-");
 		this.cacheTable.put(ip, entry);
 		
 		String[] value = new String[4]; 
