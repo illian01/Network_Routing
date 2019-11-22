@@ -154,22 +154,19 @@ public class IPLayer implements BaseLayer {
 			for(String key : staticRoutingTable.keySet()) {
 				Entry entry = staticRoutingTable.get(key);
 				
-				byte[] dstByte = AddressTranslator.stringToByte(dstString);
-				byte[] maskbyte = AddressTranslator.stringToByte(entry.netmask);
+				byte[] dstByte = AddressTranslator.stringToByteIP(dstString);
+				byte[] maskbyte = AddressTranslator.stringToByteIP(entry.netmask);
 				byte[] dstNet = masking(dstByte, maskbyte);
-				String dstNetString = AddressTranslator.byteToString(dstNet);
+				String dstNetString = AddressTranslator.byteToStringIP(dstNet);
 				
+				String nextHop = null;
 				if(entry.destination.equals(dstNetString)) {
-					if(entry.gateway.equals("connected")) {
-						// send to connected host
-					}
-					else {
-						// send to gateway
-					}
+					if(entry.gateway.equals("connected")) 		nextHop = dstString;
+					else 										nextHop = entry.gateway;
 				}
-				else if(entry.destination.equals("0.0.0.0")) {
-					// send to gateway
-				}
+				else if(entry.destination.equals("0.0.0.0"))	nextHop = entry.gateway;
+				
+				if(nextHop != null) ((ARPLayer)GetUnderLayer()).Send(input, Integer.parseInt(entry.interface_), nextHop);
 			}
 		}
 		

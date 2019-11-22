@@ -82,8 +82,44 @@ public class EthernetLayer implements BaseLayer {
 	}
 	
 	public synchronized boolean Send(byte[] input, int length, int deviceNum) {
-		// Not Implemented
-		return true;
+		byte[] bytes;
+		m_sHeader.enet_type[0] = (byte) 0x08;
+		m_sHeader.enet_type[1] = (byte) 0x06;
+		m_sHeader.enet_data = input;
+		
+		m_sHeader.enet_srcaddr.addr[0] = NILayer.deviceData.get(deviceNum).macByte[0];
+		m_sHeader.enet_srcaddr.addr[1] = NILayer.deviceData.get(deviceNum).macByte[1];
+		m_sHeader.enet_srcaddr.addr[2] = NILayer.deviceData.get(deviceNum).macByte[2];
+		m_sHeader.enet_srcaddr.addr[3] = NILayer.deviceData.get(deviceNum).macByte[3];
+		m_sHeader.enet_srcaddr.addr[4] = NILayer.deviceData.get(deviceNum).macByte[4];
+		m_sHeader.enet_srcaddr.addr[5] = NILayer.deviceData.get(deviceNum).macByte[5];
+		
+		// Judge ARP Request or not as frame_type
+		if(input[6] == 0x00 && input[7] == 0x01) {			    // ARP request 
+			m_sHeader.enet_dstaddr.addr[0] = (byte) 0xFF;
+			m_sHeader.enet_dstaddr.addr[1] = (byte) 0xFF;
+			m_sHeader.enet_dstaddr.addr[2] = (byte) 0xFF;
+			m_sHeader.enet_dstaddr.addr[3] = (byte) 0xFF;
+			m_sHeader.enet_dstaddr.addr[4] = (byte) 0xFF;
+			m_sHeader.enet_dstaddr.addr[5] = (byte) 0xFF;
+		}
+		else if(input[6] == 0x00 && input[7] == 0x02) {			// ARP reply  
+			m_sHeader.enet_dstaddr.addr[0] = input[18];
+			m_sHeader.enet_dstaddr.addr[1] = input[19];
+			m_sHeader.enet_dstaddr.addr[2] = input[20];
+			m_sHeader.enet_dstaddr.addr[3] = input[21];
+			m_sHeader.enet_dstaddr.addr[4] = input[22];
+			m_sHeader.enet_dstaddr.addr[5] = input[23];
+		}
+		else { 													// data
+			m_sHeader.enet_type[1] = (byte) 0x00;
+		}
+		 
+		bytes = ObjToByte(m_sHeader, input.length);
+		if(((NILayer)GetUnderLayer()).Send(bytes, bytes.length, deviceNum))
+			return true;
+		else 
+			return false;
 	}
 	
 	public synchronized boolean Receive(byte[] input) {
@@ -98,12 +134,12 @@ public class EthernetLayer implements BaseLayer {
 		
 		if(input[12] == 0x08 && input[13] == 0x06){				// ARP request & ARP reply
 			bytes = RemoveEtherHeader(input, input.length);
-			((ARPLayer)this.GetUpperLayer(0)).Receive(bytes, deviceNum);
+			GetUpperLayer(0).Receive(bytes, deviceNum);
 			return true;
 		}
 		else if(input[12] == 0x08 && input[13] == 0x00) {		// IPv4
 			bytes = RemoveEtherHeader(input, input.length);
-			((IPLayer)this.GetUpperLayer(1)).Receive(bytes, deviceNum);
+			GetUpperLayer(1).Receive(bytes, deviceNum);
 			return true;
 		}
 		

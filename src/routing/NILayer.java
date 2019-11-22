@@ -122,7 +122,7 @@ public class NILayer implements BaseLayer {
 				PcapPacketHandler<String> jpacketHandler = new PcapPacketHandler<String>() {
 					public void nextPacket(PcapPacket packet, String user) {
 						data = packet.getByteArray(0, packet.size());
-						((EthernetLayer)UpperLayer).Receive(data, deviceNum);
+						UpperLayer.Receive(data, deviceNum);
 					}
 				};
 
@@ -197,8 +197,8 @@ public class NILayer implements BaseLayer {
 				e.printStackTrace();
 			}
 			
-			String macstring = AddressTranslator.byteToString(macbyte);
-			byte[] ipbyte = AddressTranslator.stringToByte(ipstring);
+			String macstring = AddressTranslator.byteToStringMAC(macbyte);
+			byte[] ipbyte = AddressTranslator.stringToByteIP(ipstring);
 			
 			this.macByte = macbyte;
 			this.ipByte = ipbyte;

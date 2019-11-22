@@ -34,6 +34,10 @@ interface BaseLayer {
 	public default boolean Receive(byte[] input) {
 		return false;
 	}
+	
+	public default boolean Receive(byte[] input, int deviceNum) {
+		return false;
+	}
 
 	public default boolean Receive() {
 		return false;
