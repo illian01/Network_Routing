@@ -182,11 +182,16 @@ public class NILayer implements BaseLayer {
 		byte[] ipByte;
 		String macString;
 		String ipString;
+		boolean isNull = true;
 		
 		public DeviceData(int deviceNum) {
+			if(NILayer.m_pAdapterList.get(deviceNum).getAddresses().size() == 0) // Device has null Address
+				return;
 			String[] token = NILayer.m_pAdapterList.get(deviceNum).getAddresses().get(0).getAddr().toString().split("\\.");
 			if (token[0].contains("INET6"))
 				return ;
+			
+			isNull = false;
 			String ipstring = token[0].substring(7, token[0].length()) + "." + token[1] + "." + token[2] + "."
 					+ token[3].substring(0, token[3].length() - 1);
 			
