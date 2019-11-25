@@ -145,6 +145,8 @@ public class EthernetLayer implements BaseLayer {
 	}
 
 	public boolean CheckAddress(byte[] packet, int deviceNum) {
+		if(NILayer.deviceData.get(deviceNum).isNull) // Device is null
+			return false;
 
 		// srcaddr == my mac addr -> false
 		for (int i = 0; i < 6; i++) {

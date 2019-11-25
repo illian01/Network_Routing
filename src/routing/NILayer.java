@@ -95,7 +95,6 @@ public class NILayer implements BaseLayer {
 	}
 
 	public boolean Receive() {
-
 		Receive_Thread thread = new Receive_Thread(m_AdapterObject.get(m_iNumAdapter), this.GetUpperLayer(0),
 				m_iNumAdapter);
 		Thread obj = new Thread(thread);
@@ -181,8 +180,11 @@ public class NILayer implements BaseLayer {
 		byte[] ipByte;
 		String macString;
 		String ipString;
+		boolean isNull = true;
 
 		public DeviceData(int deviceNum) {
+			if(NILayer.m_pAdapterList.get(deviceNum).getAddresses().size() == 0) // Device has null Address
+				return;	
 			String[] token = NILayer.m_pAdapterList.get(deviceNum).getAddresses().get(0).getAddr().toString()
 					.split("\\.");
 			if (token[0].contains("INET6"))
@@ -191,6 +193,7 @@ public class NILayer implements BaseLayer {
 					+ token[3].substring(0, token[3].length() - 1);
 
 			byte[] macbyte = null;
+			isNull = false;
 			try {
 				macbyte = NILayer.m_pAdapterList.get(deviceNum).getHardwareAddress();
 			} catch (IOException e) {
