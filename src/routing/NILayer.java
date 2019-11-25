@@ -54,9 +54,9 @@ public class NILayer implements BaseLayer {
 			return;
 		}
 	}
-	
+
 	public void activateAllAdapter() {
-		for(int i = 0; i < m_pAdapterList.size(); i++) {
+		for (int i = 0; i < m_pAdapterList.size(); i++) {
 			SetAdapterNumber(i);
 			deviceData.add(new DeviceData(i));
 		}
@@ -72,20 +72,18 @@ public class NILayer implements BaseLayer {
 		int snaplen = 64 * 1024;
 		int flags = Pcap.MODE_PROMISCUOUS;
 		int timeout = 3 * 1000;
-		m_AdapterObject.add(Pcap.openLive(m_pAdapterList.get(m_iNumAdapter).getName(), snaplen, flags, timeout, errbuf));
+		m_AdapterObject
+				.add(Pcap.openLive(m_pAdapterList.get(m_iNumAdapter).getName(), snaplen, flags, timeout, errbuf));
 	}
 
 	public synchronized boolean Send(byte[] input, int length) {
 		/*
-		ByteBuffer buf = ByteBuffer.wrap(input);
-		if (m_AdapterObject.sendPacket(buf) != Pcap.OK) {
-			System.err.println(m_AdapterObject.getErr());
-			return false;
-		}
-		*/
+		 * ByteBuffer buf = ByteBuffer.wrap(input); if (m_AdapterObject.sendPacket(buf)
+		 * != Pcap.OK) { System.err.println(m_AdapterObject.getErr()); return false; }
+		 */
 		return true;
 	}
-	
+
 	public synchronized boolean Send(byte[] input, int length, int deviceNum) {
 		ByteBuffer buf = ByteBuffer.wrap(input);
 		if (m_AdapterObject.get(deviceNum).sendPacket(buf) != Pcap.OK) {
@@ -97,8 +95,8 @@ public class NILayer implements BaseLayer {
 	}
 
 	public boolean Receive() {
-		
-		Receive_Thread thread = new Receive_Thread(m_AdapterObject.get(m_iNumAdapter), this.GetUpperLayer(0), m_iNumAdapter);
+		Receive_Thread thread = new Receive_Thread(m_AdapterObject.get(m_iNumAdapter), this.GetUpperLayer(0),
+				m_iNumAdapter);
 		Thread obj = new Thread(thread);
 		obj.start();
 
@@ -176,30 +174,35 @@ public class NILayer implements BaseLayer {
 		pUULayer.SetUnderLayer(this);
 
 	}
-	
+
 	class DeviceData {
 		byte[] macByte;
 		byte[] ipByte;
 		String macString;
 		String ipString;
-		
+		boolean isNull = true;
+
 		public DeviceData(int deviceNum) {
-			String[] token = NILayer.m_pAdapterList.get(deviceNum).getAddresses().get(0).getAddr().toString().split("\\.");
+			if(NILayer.m_pAdapterList.get(deviceNum).getAddresses().size() == 0) // Device has null Address
+				return;	
+			String[] token = NILayer.m_pAdapterList.get(deviceNum).getAddresses().get(0).getAddr().toString()
+					.split("\\.");
 			if (token[0].contains("INET6"))
-				return ;
+				return;
 			String ipstring = token[0].substring(7, token[0].length()) + "." + token[1] + "." + token[2] + "."
 					+ token[3].substring(0, token[3].length() - 1);
-			
+
 			byte[] macbyte = null;
+			isNull = false;
 			try {
 				macbyte = NILayer.m_pAdapterList.get(deviceNum).getHardwareAddress();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
+
 			String macstring = AddressTranslator.byteToStringMAC(macbyte);
 			byte[] ipbyte = AddressTranslator.stringToByteIP(ipstring);
-			
+
 			this.macByte = macbyte;
 			this.ipByte = ipbyte;
 			this.macString = macstring;
