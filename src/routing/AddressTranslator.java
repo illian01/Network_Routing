@@ -36,6 +36,7 @@ public class AddressTranslator {
 	}
 	
 	public static String byteToStringMAC(byte[] address) {
+		System.out.println(456546);
 		String dstNetString = "";
 		dstNetString += String.format("%02x", address[0]) + "-";
 		dstNetString += String.format("%02x", address[1]) + "-";

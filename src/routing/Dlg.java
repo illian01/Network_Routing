@@ -69,6 +69,7 @@ public class Dlg extends JFrame implements BaseLayer {
 	JButton ARPCacheTableDeleteButton;
 	JButton proxyARPTableAddButton;
 	JButton proxyARPTableDeleteButton;
+	JButton startLayerSettingButton;
 
 
 	public static void main(String[] args) throws SocketException {
@@ -80,7 +81,6 @@ public class Dlg extends JFrame implements BaseLayer {
 		m_LayerMgr.AddLayer(new Dlg("GUI"));
 		m_LayerMgr.ConnectLayers(" NI ( *Eth ( *ARP +IP ( *GUI ) ) )");
 		m_LayerMgr.GetLayer("IP").SetUnderLayer(m_LayerMgr.GetLayer("ARP"));
-		((NILayer)m_LayerMgr.GetLayer("NI")).activateAllAdapter();
 	}
 
 	public Dlg(String pName) throws SocketException {
@@ -135,7 +135,7 @@ public class Dlg extends JFrame implements BaseLayer {
 		JScrollPane staticRoutingTableScrollPane = new JScrollPane(staticRoutingTable);
 		staticRoutingTableScrollPane.setBounds(10, 15, 580, 355);
 		staticRoutingPanel.add(staticRoutingTableScrollPane);
-
+		
 		staticRoutingTableAddButton = new JButton("Add");
 		staticRoutingTableAddButton.setBounds(420, 380, 80, 30);
 		staticRoutingTableAddButton.addActionListener(new setAddressListener());
@@ -146,7 +146,10 @@ public class Dlg extends JFrame implements BaseLayer {
 		staticRoutingTableDeleteButton.addActionListener(new setAddressListener());
 		staticRoutingPanel.add(staticRoutingTableDeleteButton);
 		
-		
+		startLayerSettingButton = new JButton("Layer start");
+		startLayerSettingButton.setBounds(10, 380, 100, 30);
+		startLayerSettingButton.addActionListener(new restartLayerListener());
+		staticRoutingPanel.add(startLayerSettingButton);
 		
 		// ARP Cache Table
 		JPanel ARPCachePanel = new JPanel();
@@ -201,6 +204,16 @@ public class Dlg extends JFrame implements BaseLayer {
 
 		setVisible(true);
 		setResizable(false);
+	}
+	
+	class restartLayerListener implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			if(e.getSource() == startLayerSettingButton) {
+				((NILayer)m_LayerMgr.GetLayer("NI")).activateAllAdapter();
+				
+			}
+		}
 	}
 
 	class setAddressListener implements ActionListener {
