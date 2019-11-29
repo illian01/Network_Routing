@@ -37,15 +37,18 @@ public class NILayer implements BaseLayer {
 			System.exit(0);
 		}
 	}
-
+		
 	public NILayer(String pName) {
 		// TODO Auto-generated constructor stub
 		pLayerName = pName;
-
 		m_pAdapterList = new ArrayList<PcapIf>();
 		m_iNumAdapter = 0;
 		SetAdapterList();
+		for (int i = 0; i < m_pAdapterList.size(); i++)
+			deviceData.add(new DeviceData(i));
+		
 	}
+	
 
 	public void SetAdapterList() {
 		int r = Pcap.findAllDevs(m_pAdapterList, errbuf);
@@ -58,7 +61,7 @@ public class NILayer implements BaseLayer {
 	public void activateAllAdapter() {
 		for (int i = 0; i < m_pAdapterList.size(); i++) {
 			SetAdapterNumber(i);
-			deviceData.add(new DeviceData(i));
+//			deviceData.add(new DeviceData(i));
 		}
 	}
 
@@ -71,7 +74,7 @@ public class NILayer implements BaseLayer {
 	public void PacketStartDriver() {
 		int snaplen = 64 * 1024;
 		int flags = Pcap.MODE_PROMISCUOUS;
-		int timeout = 3 * 1000;
+		int timeout = 1;
 		m_AdapterObject
 				.add(Pcap.openLive(m_pAdapterList.get(m_iNumAdapter).getName(), snaplen, flags, timeout, errbuf));
 	}
@@ -120,6 +123,7 @@ public class NILayer implements BaseLayer {
 				PcapPacketHandler<String> jpacketHandler = new PcapPacketHandler<String>() {
 					public void nextPacket(PcapPacket packet, String user) {
 						data = packet.getByteArray(0, packet.size());
+						System.out.println(data.length);
 						UpperLayer.Receive(data, deviceNum);
 					}
 				};
@@ -207,6 +211,8 @@ public class NILayer implements BaseLayer {
 			this.ipByte = ipbyte;
 			this.macString = macstring;
 			this.ipString = ipstring;
+			
+			System.out.println(deviceNum + " : " + ipstring);
 		}
 	}
 }

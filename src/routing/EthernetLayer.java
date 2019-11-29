@@ -5,13 +5,13 @@ import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 public class EthernetLayer implements BaseLayer {
-
+	int count = 0;
 	private class _ETHERNET_Frame {
 		_ETHERNET_ADDR enet_dstaddr;
 		_ETHERNET_ADDR enet_srcaddr;
 		byte[] enet_type;
 		byte[] enet_data;
-
+		
 		public _ETHERNET_Frame() {
 			this.enet_dstaddr = new _ETHERNET_ADDR();
 			this.enet_srcaddr = new _ETHERNET_ADDR();
@@ -127,21 +127,66 @@ public class EthernetLayer implements BaseLayer {
 
 	public synchronized boolean Receive(byte[] input, int deviceNum) {
 		byte[] bytes;
-
+		System.out.println("deviceNum : "+deviceNum +", count : " +count++);
 		if (!CheckAddress(input, deviceNum))
 			return false;
-
+		
 		if (input[12] == 0x08 && input[13] == 0x06) { // ARP request & ARP reply
 			bytes = RemoveEtherHeader(input, input.length);
 			GetUpperLayer(0).Receive(bytes, deviceNum);
 			return true;
 		} else if (input[12] == 0x08 && input[13] == 0x00) { // IPv4
+			// 실험 시작
+			if(isMyPing(input, deviceNum) && input.length == 74 && input[42] == 0x61 && input[43] == 0x62) {
+				System.out.println("Send Ping");
+				
+				byte[] tempBytes = new byte[input.length];
+				System.arraycopy(input, 0, tempBytes, 0, input.length);
+				tempBytes[0] = input[6];
+				tempBytes[1] = input[7];
+				tempBytes[2] = input[8];
+				tempBytes[3] = input[9];
+				tempBytes[4] = input[10];
+				tempBytes[5] = input[11];
+				tempBytes[6] = input[0];
+				tempBytes[7] = input[1];
+				tempBytes[8] = input[2];
+				tempBytes[9] = input[3];
+				tempBytes[10] = input[4];
+				tempBytes[11] = input[5];
+				tempBytes[26] = input[30];
+				tempBytes[27] = input[31];
+				tempBytes[28] = input[32];
+				tempBytes[29] = input[33];
+				tempBytes[30] = input[26];
+				tempBytes[31] = input[27];
+				tempBytes[32] = input[28];
+				tempBytes[33] = input[29];
+				if (((NILayer) GetUnderLayer()).Send(tempBytes, tempBytes.length, deviceNum))
+					return true;
+				else
+					return false;
+			}
+			// 실험
 			bytes = RemoveEtherHeader(input, input.length);
 			GetUpperLayer(1).Receive(bytes, deviceNum);
 			return true;
 		}
 
 		return false;
+	}
+	
+	public boolean isMyPing(byte[] packet, int deviceNum) {
+		if(NILayer.deviceData.get(deviceNum).isNull) // Device is null
+			return false;
+
+		// dstaddr != my mac addr -> false
+		for (int i = 0; i < 6; i++) {
+			if (packet[i] != NILayer.deviceData.get(deviceNum).macByte[i])
+				return false;
+		}
+
+		return true;
 	}
 
 	public boolean CheckAddress(byte[] packet, int deviceNum) {
