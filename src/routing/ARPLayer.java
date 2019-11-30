@@ -73,7 +73,7 @@ public class ARPLayer implements BaseLayer {
 	public ARPLayer(String pName) {
 		pLayerName = pName;
 		setHeader();
-		ARPRepeatThread thread = new ARPRepeatThread();
+		ARPRepeatThread thread = new ARPRepeatThread(this);
 		Thread obj = new Thread(thread);
 		obj.start();
 	}
@@ -171,7 +171,7 @@ public class ARPLayer implements BaseLayer {
 			((EthernetLayer) GetUnderLayer()).Send(msg, msg.length, deviceNum);
 		}
 
-		SendThread thread = new SendThread(nextHop, input, deviceNum);
+		SendThread thread = new SendThread(nextHop, input, deviceNum, this);
 		Thread obj = new Thread(thread);
 		obj.start();
 
@@ -421,22 +421,26 @@ public class ARPLayer implements BaseLayer {
 		String dst_addr;
 		byte[] input;
 		int deviceNum;
+		ARPLayer arpLayer;
 
-		public SendThread(String dst_addr, byte[] input, int deviceNum) {
+		public SendThread(String dst_addr, byte[] input, int deviceNum, ARPLayer arplayer) {
 			this.dst_addr = dst_addr;
 			this.input = input;
 			this.deviceNum = deviceNum;
+			this.arpLayer = arplayer;
 		}
 
 		public void run() {
 			while (cacheTable.containsKey(dst_addr)) {
-				Entry entry = cacheTable.get(dst_addr);
-				if (entry.flag == "completed") {
-					((EthernetLayer) GetUnderLayer()).Setenet_dstaddr(cacheTable.get(dst_addr).mac);
-					((EthernetLayer) GetUnderLayer()).Send(input, input.length, deviceNum);
-					break;
-				} else if (entry.flag == "failed")
-					break;
+				synchronized (arpLayer) {
+					Entry entry = cacheTable.get(dst_addr);
+					if (entry.flag == "completed") {
+						((EthernetLayer) GetUnderLayer()).Setenet_dstaddr(cacheTable.get(dst_addr).mac);
+						((EthernetLayer) GetUnderLayer()).Send(input, input.length, deviceNum);
+						break;
+					} else if (entry.flag == "failed")
+						break;
+				}
 			}
 		}
 
@@ -444,33 +448,37 @@ public class ARPLayer implements BaseLayer {
 
 	class ARPRepeatThread implements Runnable {
 
-		public ARPRepeatThread() {
+		ARPLayer arpLayer;
+		
+		public ARPRepeatThread(ARPLayer arplayer) {
+			this.arpLayer = arplayer;
 		}
 
 		public void run() {
 			while (true) {
-				for (String str : cacheTable.keySet()) {
-					Entry entry = cacheTable.get(str);
-					if (entry.flag == "completed") {
-						if (System.currentTimeMillis() - entry.createdTime > 1200000) { // 1200000ms == 20 min
-							cacheTable.remove(str);
+				synchronized (arpLayer) {
+					for (String str : cacheTable.keySet()) {
+						Entry entry = cacheTable.get(str);
+						if (entry.flag == "completed") {
+							if (System.currentTimeMillis() - entry.createdTime > 1200000) { // 1200000ms == 20 min
+								cacheTable.remove(str);
+							}
+						} else if (entry.flag == "incomplete") {
+							if (entry.count == 3) {
+								Dlg GUI = (Dlg) GetUnderLayer().GetUpperLayer(1).GetUpperLayer(0);
+								entry.flag = "failed";
+								GUI.removeARPCacheTableRow(entry.ip);
+							} else {
+								int deviceNum = Integer.parseInt(entry.interface_);
+								setHeader(entry.ip, deviceNum);
+								byte[] msg = ObjToByte();
+								entry.count++;
+								GetUnderLayer().Send(msg, msg.length);
+							}
+	
 						}
-					} else if (entry.flag == "incomplete") {
-						if (entry.count == 3) {
-							Dlg GUI = (Dlg) GetUnderLayer().GetUpperLayer(1).GetUpperLayer(0);
-							entry.flag = "failed";
-							GUI.removeARPCacheTableRow(entry.ip);
-						} else {
-							int deviceNum = Integer.parseInt(entry.interface_);
-							setHeader(entry.ip, deviceNum);
-							byte[] msg = ObjToByte();
-							entry.count++;
-							GetUnderLayer().Send(msg, msg.length);
-						}
-
 					}
 				}
-
 				try {
 					Thread.sleep(60000);
 				} catch (InterruptedException e) {
