@@ -1,12 +1,10 @@
 package routing;
 
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
-import javax.swing.DefaultListModel;
 
 public class ARPLayer implements BaseLayer {
 	public int nUpperLayerCount = 0;
@@ -164,17 +162,21 @@ public class ARPLayer implements BaseLayer {
 
 	public synchronized boolean Send(byte[] input, int deviceNum, String nextHop) {
 
-		if (!cacheTable.containsKey(nextHop)) {
+		if(ProxyARPCacheTable.containsKey(nextHop)) {
+			((EthernetLayer) GetUnderLayer()).Setenet_dstaddr(ProxyARPCacheTable.get(nextHop).mac);
+			((EthernetLayer) GetUnderLayer()).Send(input, input.length, deviceNum);
+			return true;
+		}
+		else if (!cacheTable.containsKey(nextHop)) {
 			setHeader(nextHop, deviceNum);
 			byte[] msg = ObjToByte();
 			updateCache(nextHop, new Entry(nextHop, "??-??-??-??-??-??", Integer.toString(deviceNum), "incomplete"));
 			((EthernetLayer) GetUnderLayer()).Send(msg, msg.length, deviceNum);
 		}
-
+		
 		SendThread thread = new SendThread(nextHop, input, deviceNum, this);
 		Thread obj = new Thread(thread);
 		obj.start();
-
 		return true;
 	}
 
@@ -237,7 +239,6 @@ public class ARPLayer implements BaseLayer {
 
 	private synchronized void updateCache(byte[] input, int deviceNum, String flag) {
 		try {
-
 			String ip = getSrcIPAddrFromARP(input);
 			String mac = getSrcMACAddrFromARP(input);
 			Dlg GUI = (Dlg) GetUnderLayer().GetUpperLayer(1).GetUpperLayer(0);
@@ -257,10 +258,7 @@ public class ARPLayer implements BaseLayer {
 			value[3] = entry.flag;
 
 			GUI.updateARPCacheTableRow(value);
-		} catch (IndexOutOfBoundsException e) {
-			System.out.println(e);
-			System.exit(0);
-		}
+		} catch (IndexOutOfBoundsException e) {}
 	}
 
 	private String getDstIPAddrFromARP(byte[] input) {
@@ -464,7 +462,7 @@ public class ARPLayer implements BaseLayer {
 								cacheTable.remove(str);
 							}
 						} else if (entry.flag == "incomplete") {
-							if (entry.count == 3) {
+							if (entry.count == 10000) {
 								Dlg GUI = (Dlg) GetUnderLayer().GetUpperLayer(1).GetUpperLayer(0);
 								entry.flag = "failed";
 								GUI.removeARPCacheTableRow(entry.ip);
@@ -480,7 +478,7 @@ public class ARPLayer implements BaseLayer {
 					}
 				}
 				try {
-					Thread.sleep(60000);
+					Thread.sleep(300);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
