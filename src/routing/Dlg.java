@@ -1,13 +1,9 @@
 package routing;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Container;
-import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.SocketException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -20,20 +16,15 @@ import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
-import javax.swing.border.BevelBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 
-import org.jnetpcap.PcapAddr;
 import org.jnetpcap.PcapIf;
 
 
@@ -225,13 +216,9 @@ public class Dlg extends JFrame implements BaseLayer {
 			else if(e.getSource() == staticRoutingTableDeleteButton) {
 				int[] selected = staticRoutingTable.getSelectedRows();
 				for(int i = selected.length - 1; i >= 0; i--) {
-					String str = "";
-					for(int j = 0; j < 6; j++)
-						str += staticRoutingTableModel.getValueAt(selected[i], j).toString();
-					
 					try {
 						IPLayer ip = ((IPLayer) m_LayerMgr.GetLayer("IP"));
-						ip.removeEntry(str);
+						ip.removeEntry(selected[i]);
 					} catch (NoSuchAlgorithmException e1) {
 						e1.printStackTrace();
 					}

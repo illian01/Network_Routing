@@ -5,13 +5,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringTokenizer;
-
-import javax.swing.plaf.synth.SynthSeparatorUI;
-
 import org.jnetpcap.Pcap;
 import org.jnetpcap.PcapIf;
-import org.jnetpcap.packet.JPacketHandler;
 import org.jnetpcap.packet.PcapPacket;
 import org.jnetpcap.packet.PcapPacketHandler;
 
@@ -80,10 +75,7 @@ public class NILayer implements BaseLayer {
 	}
 
 	public synchronized boolean Send(byte[] input, int length) {
-		/*
-		 * ByteBuffer buf = ByteBuffer.wrap(input); if (m_AdapterObject.sendPacket(buf)
-		 * != Pcap.OK) { System.err.println(m_AdapterObject.getErr()); return false; }
-		 */
+		// Not implemented
 		return true;
 	}
 
