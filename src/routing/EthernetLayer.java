@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 public class EthernetLayer implements BaseLayer {
-	int count = 0;
+
 	private class _ETHERNET_Frame {
 		_ETHERNET_ADDR enet_dstaddr;
 		_ETHERNET_ADDR enet_srcaddr;
@@ -126,7 +126,6 @@ public class EthernetLayer implements BaseLayer {
 
 	public synchronized boolean Receive(byte[] input, int deviceNum) {
 		byte[] bytes;
-		System.out.println("deviceNum : "+deviceNum +", count : " +count++);
 		if (!CheckAddress(input, deviceNum))
 			return false;
 		
