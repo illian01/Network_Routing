@@ -115,7 +115,6 @@ public class NILayer implements BaseLayer {
 				PcapPacketHandler<String> jpacketHandler = new PcapPacketHandler<String>() {
 					public void nextPacket(PcapPacket packet, String user) {
 						data = packet.getByteArray(0, packet.size());
-						System.out.println(data.length);
 						UpperLayer.Receive(data, deviceNum);
 					}
 				};
